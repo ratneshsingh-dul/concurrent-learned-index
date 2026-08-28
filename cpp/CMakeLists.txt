@@ -15,3 +15,17 @@ target_link_libraries(learned_index_app
    PRIVATE
      learned_index
 )
+
+add_executable(learned_index_tests
+    tests/test_learned_index.cpp
+)
+
+target_link_libraries(learned_index_tests
+     PRIVATE
+        learned_index
+        GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(learned_index_tests)
+
