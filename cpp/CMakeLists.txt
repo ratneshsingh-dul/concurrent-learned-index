@@ -1,6 +1,7 @@
 add_library(learned_index
      src/learned_index.cpp
      src/data/sorted_dataset.cpp
+     src/search/binary_search.cpp
 )
 
 target_include_directories(learned_index
@@ -20,6 +21,7 @@ target_link_libraries(learned_index_app
 add_executable(learned_index_tests
     tests/test_learned_index.cpp
     tests/test_sorted_dataset.cpp
+    tests/test_binary_search.cpp
     )
 
 target_link_libraries(learned_index_tests
