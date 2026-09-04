@@ -33,3 +33,13 @@ target_link_libraries(learned_index_tests
 include(GoogleTest)
 gtest_discover_tests(learned_index_tests)
 
+add_executable(learned_index_benchmarks
+       benchmarks/binary_search_benchmark.cpp
+       benchmarks/benchmark_dataset.cpp
+)
+
+target_link_libraries(learned_index_benchmarks
+       PRIVATE
+           learned_index
+           benchmark::benchmark_main
+)

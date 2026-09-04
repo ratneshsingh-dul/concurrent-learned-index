@@ -19,6 +19,16 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest)
 
+FetchContent_Declare(
+    googlebenchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.9.1
+)
+
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable Google Benchmark tests")
+
+FetchContent_MakeAvailable(googlebenchmark)
+
 enable_testing()
 
 add_subdirectory(cpp)
