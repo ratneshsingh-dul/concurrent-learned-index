@@ -1,117 +1,130 @@
 # Concurrent Learned Index
 
-An experimental C++20 project comparing exact lookup structures for static and
-changing key sets. The long-term goal is to measure where learned indexes help
-and where traditional structures remain the better choice.
+> **An experimental C++20 comparison of exact indexes** for static and
+> insert-changing `uint64_t` key sets.
 
-## Implemented
+This project studies where a learned index helps and where familiar structures
+such as binary search and B+ trees remain a better fit. The learned model only
+predicts a search position: every answer is corrected against the data before
+it is returned.
 
-- A validated, sorted, vector-backed SortedDataset.
-- A binary-search baseline that returns an exact vector position.
-- A BinarySearchIndex adapter that also exposes exact membership through
-  contains(key).
-- An in-memory B+ tree for unique uint64_t keys, with bulk loading, insertion,
-  exact membership lookup, inclusive range queries, and an invariant checker.
-- A static single-model learned index that predicts key positions and applies
-  exact exponential/binary correction, so model errors cannot cause wrong
-  lookup results.
-- An insert-only adaptive learned index with an ordered delta, configurable
-  merge/retraining threshold, and shared-reader/exclusive-writer locking.
-- GoogleTest coverage and Google Benchmark workloads for lookup, construction,
-  insertion, and range queries.
+**Status:** research prototype · **Build:** CMake · **Tests:** GoogleTest ·
+**Benchmarks:** Google Benchmark
 
-The B+ tree is single-threaded and in-memory. It is not a persistent database
-tree. Duplicate insertion returns false and does not change the tree.
-`AdaptiveLearnedIndex` is the only thread-safe structure in the current
-prototype: concurrent lookups share a reader lock and inserts/rebuilds take an
-exclusive lock. A rebuild currently blocks readers. The implementation is
-insert-only; deletion, tombstones, lock-free reads, and automatic threshold
-tuning are not implemented.
+## At a glance
 
-## Build and test
+| Structure | Lookup | Updates | Range scan | Thread safety |
+|---|---|---|---|---|
+| Sorted vector + binary search | Exact | Expensive middle inserts | Contiguous scan | Caller-managed |
+| B+ tree | Exact | Unique-key insert | Linked-leaf scan | Caller-managed |
+| Learned index | Exact, with model correction | Static | — | Caller-managed |
+| Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers, exclusive writer |
 
-The project uses CMake, GoogleTest, and Google Benchmark. From the repository
-root in PowerShell, run:
+The B+ tree and learned index are in-memory structures. The adaptive index is
+insert-only, and a rebuild pauses readers. See the
+[implementation status](docs/STATUS.md) for scope and remaining work.
 
-    cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
-    cmake --build build-release
-    ctest --test-dir build-release --output-on-failure
+## How the pieces fit
 
-Run the small demonstration program:
+```mermaid
+flowchart LR
+    D[SortedDataset<br/>sorted unique uint64 keys]
+    D --> B[BinarySearchIndex<br/>exact lower-bound search]
+    D --> T[BPlusTree<br/>bulk load · insert · range]
+    D --> L[LearnedIndex<br/>linear rank model]
+    L --> C[Exponential bracket<br/>+ binary correction]
+    D --> A[AdaptiveLearnedIndex]
+    A --> S[Learned base snapshot]
+    A --> X[Ordered insert delta]
+    X -->|threshold reached| R[Merge + retrain]
+    R --> S
+```
 
-    .\build-release\cpp\learned_index_app.exe
+The prediction is a hint, never a correctness boundary. The
+[architecture notes](docs/architecture.md) explain the lookup and update paths,
+threading behavior, and current trade-offs.
 
-Inspect the first model's rank error on all four deterministic benchmark key
-shapes (optional argument changes the dataset size):
+## Build and run
 
-    .\build-release\cpp\learned_model_diagnostics.exe 100000
+Prerequisites: a C++20 compiler, CMake, and Ninja. CMake downloads GoogleTest
+and Google Benchmark on the first configure, so that step needs network access.
 
-## Benchmarks
+From PowerShell at the repository root:
 
-The benchmark executable includes the historical binary-search position lookup
-and a matched exact-membership comparison for binary search and the B+ tree.
-Additional cases measure learned-model training, B+ tree bulk loading, batches
-of 64 inserts against sorted-vector insertion, adaptive inserts that trigger a
-rebuild, and 128-key inclusive range queries against a sorted-vector range
-scan. Deterministic lookup shapes include random 64-bit, evenly spaced,
-clustered, and quadratic-gap keys. Out-of-range misses and misses chosen from
-in-range gaps are separate workloads.
+```powershell
+cmake -S . -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-release
+ctest --test-dir build-release --output-on-failure
+```
 
-Lookup and bulk-load cases use datasets of 1K through 10M keys. Insert cases use
-1K through 100K initial keys, and range cases use 10K through 1M. Cases use
-five repetitions and a 0.5-second minimum warm-up. Dataset and query generation
-are outside the timed lookup loops.
+Run the small walkthrough:
 
-To run the suite and save raw Google Benchmark output:
+```powershell
+.\build-release\cpp\learned_index_app.exe
+```
 
-    .\build-release\cpp\learned_index_benchmarks.exe --benchmark_out=b_plus_tree_results.csv --benchmark_out_format=csv
+Measure learned-model rank error on the deterministic benchmark shapes (the
+optional number sets the number of keys per shape):
 
-The existing benchmark_results.csv contains historical binary-search
-measurements. New runs are not assumed to reproduce those machine-specific
-values. No performance winner is claimed until comparable runs are collected
-and reviewed.
+```powershell
+.\build-release\cpp\learned_model_diagnostics.exe 100000
+```
 
-### Preliminary 100K-key sample
+## Benchmarking
 
-One Release run on Windows 10.0.26200, GCC 16.2.0, and Google Benchmark 1.9.1
-produced these five-repetition medians using the same generated 100K-key data:
+The suite covers exact membership, model training, B+ tree bulk load, batches
+of 64 inserts, synchronous adaptive rebuilds, and inclusive range scans. Key
+shapes include random 64-bit, evenly spaced, clustered, and quadratic-gap
+datasets. Missing-key cases distinguish out-of-range misses from queries in
+actual gaps.
 
-| Operation | Binary search / sorted vector | B+ tree |
-|---|---:|---:|
-| Existing-key membership | 168 ns | 80.6 ns |
-| Missing-key membership | 217 ns | 81.1 ns |
-| Batch of 64 new inserts | 681 us | 35.5 us |
-| Inclusive range returning 128 keys | 215 ns | 745 ns |
-| Index bulk load | — | 597 us |
+Run the complete suite and save its raw output:
 
-This sample suggests the B+ tree handles this insert workload well, while the
-contiguous vector is faster for range scans. It covers one key distribution,
-one dataset size, and one machine; the insert measurements also had substantial
-run-to-run variation. Some Windows CPU-time readings for the short insert
-batches were below timer resolution, so those results use Google Benchmark's
-wall-clock real-time field. The raw output is in
-b_plus_tree_100k_results.csv.
+```powershell
+.\build-release\cpp\learned_index_benchmarks.exe `
+  --benchmark_out=run-results.csv `
+  --benchmark_out_format=csv
+```
 
-Each benchmark run should be kept as a separate trial with its raw output,
-machine/build details, interpretation, and limitations. See the
-[experiment log](docs/experiments/README.md) and the
-[first B+ tree trial](docs/experiments/trial-001-b-plus-tree-baseline.md).
-The first learned lookup comparison is recorded in
-[Trial 002](docs/experiments/trial-002-learned-lookup.md), including its raw
-CSV output and training measurements. The update/retraining trade-off is in
-[Trial 003](docs/experiments/trial-003-adaptive-insert-cost.md). The adaptive
-index currently supports insertion only; it has no deletion/tombstone path.
-Trials [004](docs/experiments/trial-004-key-shapes.md) and
-[005](docs/experiments/trial-005-inrange-misses.md) add key-shape and
-in-range-miss comparisons. [Trial 006](docs/experiments/trial-006-model-error.md)
-records the model's per-shape rank error.
+### What the first measurements say
 
-## Roadmap
+The first 100K-key B+ tree trial had lower median membership and 64-key insert
+times than the sorted-vector baselines; the vector was faster for a 128-key
+range scan. In later random-key lookup samples, B+ tree led at 100K keys, the
+learned index and B+ tree were close at 1M, and the learned index was lower at
+10M. On evenly spaced keys, the learned model was much faster; on quadratic-gap
+keys it needed substantially more correction.
 
-The current prototype includes exact static learned lookup and a thresholded
-insert buffer with synchronous retraining and shared/exclusive locking. The
-next research steps are broader workload distributions, learned-model error
-and correction-distance reporting, threshold tuning, concurrent throughput
-benchmarks, and sanitizer/race-tool coverage. See the
-[implementation status](docs/STATUS.md) and [experiment log](docs/experiments/README.md)
-for what has been measured and what remains.
+These are exploratory measurements from one machine and short runs, with
+noticeable variation in some cases. They do not establish a general winner.
+The measured medians, raw CSVs, machine details, and caveats are preserved in
+the [experiment log](docs/experiments/README.md). Start with
+[Trial 001: B+ tree baseline](docs/experiments/trial-001-b-plus-tree-baseline.md)
+or browse the [full trial index](docs/experiments/README.md).
+
+## Repository guide
+
+```text
+cpp/include/learned_index/   public data types and index interfaces
+cpp/src/                     index implementations
+cpp/tests/                   correctness and concurrency tests
+cpp/benchmarks/              reproducible workload definitions
+docs/STATUS.md               implemented scope and open work
+docs/architecture.md         diagrams and behavior notes
+docs/experiments/            trial write-ups and raw benchmark output
+```
+
+## Current limits
+
+- The learned index uses one global linear model; skewed and hot-query
+  workloads still need measurement.
+- Adaptive rebuild thresholds are configured manually. Rebuild work is
+  synchronous and holds the exclusive lock.
+- Updates support insertion only. Deletion, persistence, crash recovery,
+  concurrent B+ tree access, and lock-free reads are not implemented.
+- Concurrent correctness has a test; concurrent throughput and race-detector
+  runs remain open.
+
+The project is complete only as an evolving prototype. The broader research
+work is still in progress; consult the [status and next steps](docs/STATUS.md)
+before interpreting results or extending claims.
