@@ -1,7 +1,8 @@
 # Project status
 
 Last verified: 2026-10-11. This is an educational research prototype, not a
-production database index. Current code changes are local and uncommitted.
+production database index. The implementation and experiment baseline is
+committed on `main` as `3080c5c`.
 
 ## Implemented
 
