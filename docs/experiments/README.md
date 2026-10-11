@@ -1,0 +1,50 @@
+# Experiment log
+
+This folder records how the implementation and its evidence change over time.
+Keep raw benchmark output beside each trial entry. Never replace an older raw
+result: give each run a new trial number and filename so results remain
+auditable.
+
+## Trial index
+
+| Trial | Date | Question | Result |
+|---|---|---|---|
+| [001](trial-001-b-plus-tree-baseline.md) | 2026-10-11 | How does the first B+ tree compare with binary search and a sorted vector on one 100K-key random dataset? | B+ tree was faster on measured membership and 64-key insertion; sorted vector was faster for 128-key ranges. Exploratory only. |
+| [002](trial-002-learned-lookup.md) | 2026-10-11 | How does a trained single-model learned lookup compare across 100K, 1M, and 10M random keys? | Learned lookup was competitive at 1M and faster in this sample at 10M; B+ tree was faster at 100K. Training time was measured separately. One key distribution only. |
+| [003](trial-003-adaptive-insert-cost.md) | 2026-10-11 | What is the cost of 64 inserts when the final insert triggers learned-base retraining? | Rebuild cost dominates this batch at every size tested; this quantifies the chosen 64-key threshold rather than establishing an ideal threshold. |
+| [004](trial-004-key-shapes.md) | 2026-10-11 | How do existing-key lookups vary across four deterministic key shapes? | Learned index excelled on evenly spaced keys, but B+ tree led on random, clustered, and quadratic-gap keys. The “missing” stream mostly tested out-of-range misses. |
+| [005](trial-005-inrange-misses.md) | 2026-10-11 | How do all three indexes handle missing keys selected from actual gaps? | B+ tree led on random, clustered, and quadratic-gap cases; learned lookup was close on random keys and faster on evenly spaced keys. Several cases were noisy. |
+| [006](trial-006-model-error.md) | 2026-10-11 | How far is the linear model's prediction from the true rank on each shape? | Mean absolute rank error was 0 for evenly spaced keys and 5,708 for quadratic gaps, matching the observed lookup strengths and weaknesses. |
+
+## Recording the next trial
+
+1. Create a new `trial-NNN-short-name.md` file by copying the template below.
+2. Save the unedited Google Benchmark CSV as `trial-NNN-raw.csv` in this folder.
+3. Record the exact command, source revision, compiler, build mode, machine,
+   dataset shape, seeds, benchmark arguments, and any deviations.
+4. Compare implementations only when the timed work and setup are equivalent.
+   Report medians and variation; investigate timer-resolution and high-variance
+   results instead of presenting them as wins.
+5. Add the trial to the index above. Preserve earlier entries and raw files.
+
+## Trial template
+
+```markdown
+# Trial NNN: Short title
+
+- Date:
+- Question:
+- Source revision / working-tree description:
+- Raw output:
+- Command:
+- Compiler and version:
+- Build type and flags:
+- Machine / operating system:
+- Dataset sizes, distribution, and seed:
+- Workload and timed setup:
+- Repetitions / warm-up:
+- Results (include units and variability):
+- Interpretation:
+- Limitations / deviations:
+- Next experiment:
+```
