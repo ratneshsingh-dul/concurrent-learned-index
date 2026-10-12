@@ -47,6 +47,26 @@ void benchmark_contains(
     }
 }
 
+template <typename IndexFactory>
+void benchmark_hot_contains(benchmark::State& state, IndexFactory make_index) {
+    const auto dataset = benchmark_data::make_dataset(
+        static_cast<std::size_t>(state.range(0))
+    );
+    const auto index = make_index(dataset);
+    const auto workload = benchmark_data::make_hot_query_workload(dataset, 1000);
+    state.SetLabel("hot_keys=1%,hot_queries=90%");
+    std::size_t query_index = 0;
+
+    for (auto _ : state) {
+        const bool found = index.contains(workload.queries[query_index]);
+        benchmark::DoNotOptimize(&found);
+        if (++query_index == workload.queries.size()) {
+            query_index = 0;
+        }
+    }
+    state.SetItemsProcessed(state.iterations());
+}
+
 void BM_BinarySearch_ContainsExisting(benchmark::State& state) {
     benchmark_contains(state, true, [](const auto& dataset) {
         return learned_index::BinarySearchIndex(dataset);
@@ -80,6 +100,18 @@ void BM_LearnedIndex_ContainsExisting(benchmark::State& state) {
 void BM_LearnedIndex_ContainsMissing(benchmark::State& state) {
     benchmark_contains(state, false, [](const auto& dataset) {
         return learned_index::LearnedIndex(dataset);
+    });
+}
+
+void BM_BinarySearch_ContainsHotQueries(benchmark::State& state) {
+    benchmark_hot_contains(state, [](const auto& dataset) {
+        return learned_index::BinarySearchIndex(dataset);
+    });
+}
+
+void BM_BPlusTree_ContainsHotQueries(benchmark::State& state) {
+    benchmark_hot_contains(state, [](const auto& dataset) {
+        return learned_index::BPlusTree::bulk_load(dataset);
     });
 }
 
@@ -379,6 +411,12 @@ BENCHMARK(BM_LearnedIndex_ContainsExisting)
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_ContainsMissing)
     ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_BinarySearch_ContainsHotQueries)
+    ->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_BPlusTree_ContainsHotQueries)
+    ->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_Train)
     ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
