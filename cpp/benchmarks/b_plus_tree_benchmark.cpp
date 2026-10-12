@@ -115,6 +115,12 @@ void BM_BPlusTree_ContainsHotQueries(benchmark::State& state) {
     });
 }
 
+void BM_LearnedIndex_ContainsHotQueries(benchmark::State& state) {
+    benchmark_hot_contains(state, [](const auto& dataset) {
+        return learned_index::LearnedIndex(dataset);
+    });
+}
+
 void BM_LearnedIndex_Train(benchmark::State& state) {
     const auto dataset = benchmark_data::make_dataset(
         static_cast<std::size_t>(state.range(0))
@@ -416,6 +422,9 @@ BENCHMARK(BM_BinarySearch_ContainsHotQueries)
     ->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_BPlusTree_ContainsHotQueries)
+    ->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_LearnedIndex_ContainsHotQueries)
     ->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_Train)
