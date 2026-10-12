@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-11. This is an educational research prototype, not a
+Last verified: 2026-10-12. This is an educational research prototype, not a
 production database index. The implementation and experiment baseline is
 committed on `main` as `3080c5c`.
 
@@ -23,7 +23,7 @@ committed on `main` as `3080c5c`.
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- `ctest --test-dir build-release --output-on-failure`: 37/37 tests passed.
+- `ctest --test-dir build-release --output-on-failure`: 40/40 tests passed.
 - `build-release/cpp/learned_index_app.exe` ran and demonstrated all four
   index modes.
 - `git diff --check` reported no whitespace errors.
@@ -31,6 +31,8 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   `docs/experiments/`.
 - Trial 006 ran the rank-error report on 100K keys per shape and saved CSV
   output in `docs/experiments/`.
+- Trial 007 compared hot-query lookups on 100K keys and saved raw output plus
+  the interpretation and limitations in `docs/experiments/`.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -38,8 +40,8 @@ general performance rankings. No sanitizer or race detector was run.
 ## Known scope limits and next work
 
 1. The learned model is a single global linear regression. Initial evenly
-   spaced, clustered, and quadratic-gap cases are recorded, but skewed/hot
-   distributions and out-of-process repeat studies remain.
+   spaced, clustered, quadratic-gap, and one hot-query case are recorded, but
+   additional skew levels, hot-set sizes, and fresh-process repeats remain.
 2. Correction distance and model residual distributions are not reported yet.
 3. The adaptive policy uses a configured count threshold. It does not estimate
    workload changes or tune that threshold automatically. Trial 003 shows that
@@ -50,9 +52,10 @@ general performance rankings. No sanitizer or race detector was run.
 5. Updates support insertion only. Deletion, tombstones, persistence, crash
    recovery, B+ tree concurrency, and lock-free access are outside the current
    prototype.
-6. The benchmark suite has point lookups, training, bulk load, inserts, and
-   range scans. It still needs memory accounting, sequential/hot queries,
-   read/write mixes, and repeatability analysis across fresh processes.
+6. The benchmark suite has point lookups, training, bulk load, inserts, range
+   scans, and an initial hot-query case. It still needs memory accounting,
+   sequential scans, read/write mixes, and repeatability analysis across fresh
+   processes.
 
 The raw measurements and the limitations of each run are recorded in the
 [experiment log](experiments/README.md). The project should only be described

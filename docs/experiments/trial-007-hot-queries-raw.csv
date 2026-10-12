@@ -1,0 +1,36 @@
+2026-10-12T09:35:19+05:30
+Running C:\Users\bittu bangali\concurrent-learned-index\build-release\cpp\learned_index_benchmarks.exe
+Run on (12 X 2496 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x6)
+  L1 Instruction 32 KiB (x6)
+  L2 Unified 1280 KiB (x6)
+  L3 Unified 12288 KiB (x1)
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",5600000,124.631,125.558,ns,,7.96444e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",5600000,133.732,133.929,ns,,7.46667e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",5600000,148.145,147.879,ns,,6.76226e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",5600000,125.577,122.768,ns,,8.14545e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",5600000,134.879,133.929,ns,,7.46667e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_mean",5,133.393,132.812,ns,,7.5611e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_median",5,133.732,133.929,ns,,7.46667e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_stddev",5,9.45798,9.78553,ns,,538547,"hot_keys=1%,hot_queries=90%",,
+"BM_BinarySearch_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_cv",5,0.0709031,0.0736793,,,0.071226,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",10000000,90.0017,90.625,ns,,1.10345e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",10000000,97.0843,96.875,ns,,1.03226e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",10000000,78.156,78.125,ns,,1.28e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",10000000,86.7097,84.375,ns,,1.18519e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",10000000,75.214,73.4375,ns,,1.3617e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_mean",5,85.4331,84.6875,ns,,1.19252e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_median",5,86.7097,84.375,ns,,1.18519e+07,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_stddev",5,8.88314,9.40101,ns,,1.32237e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_BPlusTree_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_cv",5,0.103978,0.111008,,,0.110889,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",4977778,117.272,119.28,ns,,8.38363e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",4977778,114.959,116.141,ns,,8.61021e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",4977778,118.675,119.28,ns,,8.38363e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",4977778,124.608,125.558,ns,,7.96444e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5",4977778,129.07,128.697,ns,,7.77019e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_mean",5,120.917,121.791,ns,,8.22242e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_median",5,118.675,119.28,ns,,8.38363e+06,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_stddev",5,5.78575,5.15782,ns,,344027,"hot_keys=1%,hot_queries=90%",,
+"BM_LearnedIndex_ContainsHotQueries/100000/min_warmup_time:0.500/repeats:5_cv",5,0.0478489,0.0423497,,,0.0418402,"hot_keys=1%,hot_queries=90%",,

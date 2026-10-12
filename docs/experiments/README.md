@@ -15,6 +15,7 @@ auditable.
 | [004](trial-004-key-shapes.md) | 2026-10-11 | How do existing-key lookups vary across four deterministic key shapes? | Learned index excelled on evenly spaced keys, but B+ tree led on random, clustered, and quadratic-gap keys. The “missing” stream mostly tested out-of-range misses. |
 | [005](trial-005-inrange-misses.md) | 2026-10-11 | How do all three indexes handle missing keys selected from actual gaps? | B+ tree led on random, clustered, and quadratic-gap cases; learned lookup was close on random keys and faster on evenly spaced keys. Several cases were noisy. |
 | [006](trial-006-model-error.md) | 2026-10-11 | How far is the linear model's prediction from the true rank on each shape? | Mean absolute rank error was 0 for evenly spaced keys and 5,708 for quadratic gaps, matching the observed lookup strengths and weaknesses. |
+| [007](trial-007-hot-query-workload.md) | 2026-10-12 | How do the indexes compare when 90% of requests target a 1% hot key set? | B+ tree had the lowest median in one 100K-key run; repeat across hot-set sizes and fresh processes. |
 
 ## Recording the next trial
 

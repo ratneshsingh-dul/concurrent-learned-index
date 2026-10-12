@@ -76,7 +76,8 @@ The suite covers exact membership, model training, B+ tree bulk load, batches
 of 64 inserts, synchronous adaptive rebuilds, and inclusive range scans. Key
 shapes include random 64-bit, evenly spaced, clustered, and quadratic-gap
 datasets. Missing-key cases distinguish out-of-range misses from queries in
-actual gaps.
+actual gaps. Hot-query cases compare all three indexes with 90% of requests
+drawn from a fixed 1% hot-key set.
 
 Run the complete suite and save its raw output:
 
@@ -100,7 +101,9 @@ noticeable variation in some cases. They do not establish a general winner.
 The measured medians, raw CSVs, machine details, and caveats are preserved in
 the [experiment log](docs/experiments/README.md). Start with
 [Trial 001: B+ tree baseline](docs/experiments/trial-001-b-plus-tree-baseline.md)
-or browse the [full trial index](docs/experiments/README.md).
+or browse the [full trial index](docs/experiments/README.md). The initial
+[hot-query trial](docs/experiments/trial-007-hot-query-workload.md) includes
+its raw measurements and limits.
 
 ## Repository guide
 
