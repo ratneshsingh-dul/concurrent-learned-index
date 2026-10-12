@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <numeric>
 #include <stdexcept>
 
 namespace benchmark_data{
@@ -141,6 +142,56 @@ namespace benchmark_data{
             queries.push_back(lower + 1 + (generator() % gap_size));
         }
         return queries;
+    }
+
+    HotQueryWorkload make_hot_query_workload(
+        const learned_index::SortedDataset& dataset,
+        std::size_t query_count
+    ) {
+        if (dataset.empty()) {
+            if (query_count == 0) {
+                return {};
+            }
+            throw std::invalid_argument(
+                "cannot generate hot queries for an empty dataset"
+            );
+        }
+
+        const std::size_t hot_count = std::max<std::size_t>(
+            1, dataset.size() / 100 + (dataset.size() % 100 != 0)
+        );
+        std::mt19937_64 hot_generator(24681357);
+        std::vector<std::size_t> positions(dataset.size());
+        std::iota(positions.begin(), positions.end(), 0);
+        std::shuffle(positions.begin(), positions.end(), hot_generator);
+
+        HotQueryWorkload workload;
+        workload.hot_keys.reserve(hot_count);
+        for (std::size_t i = 0; i < hot_count; ++i) {
+            workload.hot_keys.push_back(dataset[positions[i]]);
+        }
+
+        workload.queries.reserve(query_count);
+        std::mt19937_64 query_generator(13579246);
+        std::bernoulli_distribution choose_hot_key(0.90);
+        std::uniform_int_distribution<std::size_t> hot_distribution(
+            0, workload.hot_keys.size() - 1
+        );
+        std::uniform_int_distribution<std::size_t> dataset_distribution(
+            0, dataset.size() - 1
+        );
+        while (workload.queries.size() < query_count) {
+            if (choose_hot_key(query_generator)) {
+                workload.queries.push_back(
+                    workload.hot_keys[hot_distribution(query_generator)]
+                );
+            } else {
+                workload.queries.push_back(
+                    dataset[dataset_distribution(query_generator)]
+                );
+            }
+        }
+        return workload;
     }
 
 }

@@ -5,6 +5,11 @@
 
 namespace benchmark_data{
 
+struct HotQueryWorkload {
+    std::vector<learned_index::Key> hot_keys;
+    std::vector<learned_index::Key> queries;
+};
+
 enum class DatasetShape {
     random_64,
     evenly_spaced,
@@ -27,6 +32,13 @@ std::vector<learned_index::Key> make_missing_queries(
 );
 
 std::vector<learned_index::Key> make_in_range_missing_queries(
+    const learned_index::SortedDataset& dataset,
+    std::size_t query_count
+);
+
+// Builds a deterministic workload that samples 90% of queries from a random
+// 1% hot-key set and the remainder uniformly from the full dataset.
+HotQueryWorkload make_hot_query_workload(
     const learned_index::SortedDataset& dataset,
     std::size_t query_count
 );

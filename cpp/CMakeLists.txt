@@ -43,6 +43,8 @@ add_executable(learned_index_tests
     tests/test_learned_position_index.cpp
     tests/test_adaptive_learned_index.cpp
     tests/test_b_plus_tree.cpp
+    tests/test_hot_query_workload.cpp
+    benchmarks/benchmark_dataset.cpp
     )
 
 target_link_libraries(learned_index_tests
