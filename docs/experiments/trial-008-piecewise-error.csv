@@ -1,0 +1,5 @@
+dataset_shape,key_count,global_mean_abs_rank_error,global_p50,global_p95,global_max,piecewise_mean_abs_rank_error,piecewise_p50,piecewise_p95,piecewise_max
+random_64,100000,68.91,66,154,207,6.38,5,16,32
+evenly_spaced,100000,0.00,0,0,0,0.00,0,0,0
+clustered,100000,63.95,64,122,128,63.41,63,121,142
+quadratic_gaps,100000,5708.16,5590,13983,18749,2.06,1,7,191

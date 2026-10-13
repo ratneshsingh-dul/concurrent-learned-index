@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include <learned_index/index/learned_index.hpp>
@@ -56,12 +57,15 @@ int main(int argc, char** argv) {
             return std::tuple{static_cast<double>(total_error / errors.size()),
                               errors[p50], errors[p95], errors.back()};
         };
-        const auto [global_mean, global_p50, global_p95, global_max] = rank_errors(global_index);
-        const auto [piecewise_mean, piecewise_p50, piecewise_p95, piecewise_max] = rank_errors(piecewise_index);
+        const auto [global_mean, global_p50, global_p95, global_max] =
+            rank_errors(global_index);
+        const auto [piecewise_mean, piecewise_p50, piecewise_p95, piecewise_max] =
+            rank_errors(piecewise_index);
         std::cout << benchmark_data::shape_name(shape) << ',' << dataset.size() << ','
                   << std::fixed << std::setprecision(2)
-                  << global_mean << ',' << global_p50 << ',' << global_p95 << ',' << global_max << ','
-                  << piecewise_mean << ',' << piecewise_p50 << ',' << piecewise_p95 << ',' << piecewise_max << '\n';
+                  << global_mean << ',' << global_p50 << ',' << global_p95 << ','
+                  << global_max << ',' << piecewise_mean << ',' << piecewise_p50 << ','
+                  << piecewise_p95 << ',' << piecewise_max << '\n';
     }
     return 0;
 }

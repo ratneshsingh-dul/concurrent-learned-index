@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-12. This is an educational research prototype, not a
+Last verified: 2026-10-13. This is an educational research prototype, not a
 production database index. The implementation and experiment baseline is
 committed on `main` as `3080c5c`.
 
@@ -12,6 +12,9 @@ committed on `main` as `3080c5c`.
 - Static learned index trained with one normalized least-squares linear
   model. The predicted location is corrected by exponential bracketing and
   binary search before an exact answer is returned.
+- Optional piecewise-linear static learned index, with a configurable target
+  segment size, segment routing, and exact local correction. It is benchmarked
+  against the global model; it does not replace that baseline.
 - Insert-only adaptive learned index with an immutable learned base, ordered
   delta, configurable rebuild threshold, synchronous merge/retraining, and
   `std::shared_mutex` reader/writer coordination.
@@ -23,7 +26,7 @@ committed on `main` as `3080c5c`.
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- `ctest --test-dir build-release --output-on-failure`: 40/40 tests passed.
+- `ctest --test-dir build-release --output-on-failure`: 45/45 tests passed.
 - `build-release/cpp/learned_index_app.exe` ran and demonstrated all four
   index modes.
 - `git diff --check` reported no whitespace errors.
@@ -33,15 +36,20 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   output in `docs/experiments/`.
 - Trial 007 compared hot-query lookups on 100K keys and saved raw output plus
   the interpretation and limitations in `docs/experiments/`.
+- Trial 008 compared global and piecewise models on four 100K-key shapes,
+  including rank-error distributions, existing-key and in-range-miss lookup,
+  and training cost; both raw CSVs are saved in `docs/experiments/`.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
 
 ## Known scope limits and next work
 
-1. The learned model is a single global linear regression. Initial evenly
-   spaced, clustered, quadratic-gap, and one hot-query case are recorded, but
-   additional skew levels, hot-set sizes, and fresh-process repeats remain.
+1. The global model remains a single linear regression, with an optional
+   piecewise alternative using fixed-size segments. Initial evenly spaced,
+   clustered, quadratic-gap, and one hot-query cases are recorded, but the
+   segment-size trade-off, additional skew levels, hot-set sizes, and fresh-
+   process repeats remain open.
 2. Correction distance and model residual distributions are not reported yet.
 3. The adaptive policy uses a configured count threshold. It does not estimate
    workload changes or tune that threshold automatically. Trial 003 shows that

@@ -18,6 +18,7 @@ it is returned.
 | Sorted vector + binary search | Exact | Expensive middle inserts | Contiguous scan | Caller-managed |
 | B+ tree | Exact | Unique-key insert | Linked-leaf scan | Caller-managed |
 | Learned index | Exact, with model correction | Static | — | Caller-managed |
+| Piecewise learned index | Exact, with per-segment model correction | Static | — | Caller-managed |
 | Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers, exclusive writer |
 
 The B+ tree and learned index are in-memory structures. The adaptive index is
@@ -31,8 +32,10 @@ flowchart LR
     D[SortedDataset<br/>sorted unique uint64 keys]
     D --> B[BinarySearchIndex<br/>exact lower-bound search]
     D --> T[BPlusTree<br/>bulk load · insert · range]
-    D --> L[LearnedIndex<br/>linear rank model]
+    D --> L[LearnedIndex<br/>one linear rank model]
     L --> C[Exponential bracket<br/>+ binary correction]
+    D --> P[PiecewiseLearnedIndex<br/>linear model per segment]
+    P --> PC[Segment selection<br/>+ exact correction]
     D --> A[AdaptiveLearnedIndex]
     A --> S[Learned base snapshot]
     A --> X[Ordered insert delta]
@@ -63,8 +66,8 @@ Run the small walkthrough:
 .\build-release\cpp\learned_index_app.exe
 ```
 
-Measure learned-model rank error on the deterministic benchmark shapes (the
-optional number sets the number of keys per shape):
+Compare global and piecewise learned-model rank error on the deterministic
+benchmark shapes (the optional number sets the number of keys per shape):
 
 ```powershell
 .\build-release\cpp\learned_model_diagnostics.exe 100000
@@ -103,7 +106,10 @@ the [experiment log](docs/experiments/README.md). Start with
 [Trial 001: B+ tree baseline](docs/experiments/trial-001-b-plus-tree-baseline.md)
 or browse the [full trial index](docs/experiments/README.md). The initial
 [hot-query trial](docs/experiments/trial-007-hot-query-workload.md) includes
-its raw measurements and limits.
+its raw measurements and limits. The first piecewise-model trial shows lower
+prediction error and faster lookup on quadratic-gap keys, with higher training
+cost and slower lookups on several other shapes; see
+[Trial 008](docs/experiments/trial-008-piecewise-learned-index.md).
 
 ## Repository guide
 
@@ -119,8 +125,9 @@ docs/experiments/            trial write-ups and raw benchmark output
 
 ## Current limits
 
-- The learned index uses one global linear model; skewed and hot-query
-  workloads still need measurement.
+- The global learned index remains the baseline. The optional piecewise model
+  uses a fixed target segment size that has not been tuned across datasets;
+  skew and hot-query behavior still need broader measurement.
 - Adaptive rebuild thresholds are configured manually. Rebuild work is
   synchronous and holds the exclusive lock.
 - Updates support insertion only. Deletion, persistence, crash recovery,

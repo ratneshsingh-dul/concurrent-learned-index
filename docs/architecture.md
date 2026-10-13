@@ -17,6 +17,7 @@ flowchart TB
       BS[BinarySearchIndex<br/>lower_bound]
       BT[BPlusTree<br/>bulk load + insert + range]
       LI[LearnedIndex<br/>regression predicts rank]
+      PLI[PiecewiseLearnedIndex<br/>one regression per rank segment]
       EC[Exact correction<br/>exponential bracket + binary search]
     end
     subgraph Mutable[Insert-changing structure]
@@ -30,6 +31,8 @@ flowchart TB
     SD --> BT
     SD --> LI
     LI --> EC
+    SD --> PLI
+    PLI --> EC
     SD --> ALI
     ALI --> BASE
     ALI --> DELTA
@@ -59,7 +62,14 @@ sequenceDiagram
 Prediction error changes how much correction work is needed, but does not
 change the answer. A poor fit can make this implementation slower than plain
 binary search; the error report and benchmark trials document that trade-off.
-The learned model borrows its `SortedDataset`, which must outlive it.
+The global model borrows its `SortedDataset`, which must outlive it. The
+piecewise alternative stores one small model per contiguous rank segment and
+selects a segment by its last key before predicting within that segment. It
+also borrows the dataset and performs exact correction, so a segment boundary
+or imperfect fit cannot change membership correctness. More segments can
+reduce model error but add model storage, routing work, and training time; the
+segment size is configurable and has not yet been tuned beyond the initial
+comparison in Trial 008.
 
 ## Adaptive updates
 
