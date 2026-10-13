@@ -13,6 +13,7 @@
 #include <learned_index/index/binary_search_index.hpp>
 #include <learned_index/index/adaptive_learned_index.hpp>
 #include <learned_index/index/learned_index.hpp>
+#include <learned_index/index/piecewise_learned_index.hpp>
 #include <learned_index/search/binary_search.hpp>
 #include "benchmark_dataset.hpp"
 
@@ -67,6 +68,8 @@ void benchmark_hot_contains(benchmark::State& state, IndexFactory make_index) {
     state.SetItemsProcessed(state.iterations());
 }
 
+benchmark_data::DatasetShape shape_from_argument(benchmark::State& state);
+
 void BM_BinarySearch_ContainsExisting(benchmark::State& state) {
     benchmark_contains(state, true, [](const auto& dataset) {
         return learned_index::BinarySearchIndex(dataset);
@@ -103,6 +106,24 @@ void BM_LearnedIndex_ContainsMissing(benchmark::State& state) {
     });
 }
 
+void BM_PiecewiseLearnedIndex_ContainsExisting(benchmark::State& state) {
+    benchmark_contains(state, true, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
+    });
+}
+
+void BM_PiecewiseLearnedIndex_ContainsMissing(benchmark::State& state) {
+    benchmark_contains(state, false, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
+    });
+}
+
+void BM_PiecewiseLearnedIndex_ContainsMissingByShape(benchmark::State& state) {
+    benchmark_contains(state, false, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
+    }, shape_from_argument(state));
+}
+
 void BM_BinarySearch_ContainsHotQueries(benchmark::State& state) {
     benchmark_hot_contains(state, [](const auto& dataset) {
         return learned_index::BinarySearchIndex(dataset);
@@ -119,6 +140,26 @@ void BM_LearnedIndex_ContainsHotQueries(benchmark::State& state) {
     benchmark_hot_contains(state, [](const auto& dataset) {
         return learned_index::LearnedIndex(dataset);
     });
+}
+
+void BM_PiecewiseLearnedIndex_ContainsHotQueries(benchmark::State& state) {
+    benchmark_hot_contains(state, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
+    });
+}
+
+void BM_PiecewiseLearnedIndex_Train(benchmark::State& state) {
+    const auto dataset = benchmark_data::make_dataset(
+        static_cast<std::size_t>(state.range(0))
+    );
+    for (auto _ : state) {
+        const learned_index::PiecewiseLearnedIndex index(dataset);
+        benchmark::DoNotOptimize(index.predict_position(dataset[dataset.size() / 2]));
+        benchmark::ClobberMemory();
+    }
+    state.SetItemsProcessed(
+        state.iterations() * static_cast<std::int64_t>(dataset.size())
+    );
 }
 
 void BM_LearnedIndex_Train(benchmark::State& state) {
@@ -169,6 +210,12 @@ void BM_LearnedIndex_ContainsExistingByShape(benchmark::State& state) {
     }, shape_from_argument(state));
 }
 
+void BM_PiecewiseLearnedIndex_ContainsExistingByShape(benchmark::State& state) {
+    benchmark_contains(state, true, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
+    }, shape_from_argument(state));
+}
+
 void BM_LearnedIndex_ContainsMissingByShape(benchmark::State& state) {
     benchmark_contains(state, false, [](const auto& dataset) {
         return learned_index::LearnedIndex(dataset);
@@ -190,6 +237,12 @@ void BM_BPlusTree_ContainsInRangeMissingByShape(benchmark::State& state) {
 void BM_LearnedIndex_ContainsInRangeMissingByShape(benchmark::State& state) {
     benchmark_contains(state, false, [](const auto& dataset) {
         return learned_index::LearnedIndex(dataset);
+    }, shape_from_argument(state), true);
+}
+
+void BM_PiecewiseLearnedIndex_ContainsInRangeMissingByShape(benchmark::State& state) {
+    benchmark_contains(state, false, [](const auto& dataset) {
+        return learned_index::PiecewiseLearnedIndex(dataset);
     }, shape_from_argument(state), true);
 }
 
@@ -418,6 +471,12 @@ BENCHMARK(BM_LearnedIndex_ContainsExisting)
 BENCHMARK(BM_LearnedIndex_ContainsMissing)
     ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsExisting)
+    ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsMissing)
+    ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_BinarySearch_ContainsHotQueries)
     ->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
@@ -427,7 +486,13 @@ BENCHMARK(BM_BPlusTree_ContainsHotQueries)
 BENCHMARK(BM_LearnedIndex_ContainsHotQueries)
     ->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsHotQueries)
+    ->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_Train)
+    ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_Train)
     ->Arg(1000)->Arg(10000)->Arg(100000)->Arg(1000000)->Arg(10000000)
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_BinarySearch_ContainsExistingByShape)
@@ -445,7 +510,13 @@ BENCHMARK(BM_BPlusTree_ContainsMissingByShape)
 BENCHMARK(BM_LearnedIndex_ContainsExistingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsExistingByShape)
+    ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
+    ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_ContainsMissingByShape)
+    ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsMissingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_BinarySearch_ContainsInRangeMissingByShape)
@@ -455,6 +526,9 @@ BENCHMARK(BM_BPlusTree_ContainsInRangeMissingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_LearnedIndex_ContainsInRangeMissingByShape)
+    ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
+    ->Repetitions(5)->MinWarmUpTime(0.5);
+BENCHMARK(BM_PiecewiseLearnedIndex_ContainsInRangeMissingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
 BENCHMARK(BM_BPlusTree_BulkLoad)
