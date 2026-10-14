@@ -17,6 +17,7 @@ auditable.
 | [006](trial-006-model-error.md) | 2026-10-11 | How far is the linear model's prediction from the true rank on each shape? | Mean absolute rank error was 0 for evenly spaced keys and 5,708 for quadratic gaps, matching the observed lookup strengths and weaknesses. |
 | [007](trial-007-hot-query-workload.md) | 2026-10-12 | How do the indexes compare when 90% of requests target a 1% hot key set? | B+ tree had the lowest median in one 100K-key run; repeat across hot-set sizes and fresh processes. |
 | [008](trial-008-piecewise-learned-index.md) | 2026-10-13 | Does a piecewise-linear rank model improve prediction and lookup on nonlinear key shapes enough to justify its training cost? | Quadratic-gap lookup improved substantially, while random/even/clustered lookups and model training were slower; results are shape-dependent and exploratory. |
+| [009](trial-009-correction-distance.md) | 2026-10-14 | How far do global and piecewise predictions sit from the true insertion rank for existing and in-range-missing queries? | Piecewise predictions substantially reduced sampled rank distance on random and quadratic-gap keys; rank distance is a correction-work proxy, not a probe count or latency result. |
 
 ## Recording the next trial
 

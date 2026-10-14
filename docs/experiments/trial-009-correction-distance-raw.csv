@@ -1,0 +1,17 @@
+dataset_shape,key_count,model,query_kind,query_count,mean_signed_residual,p05_signed_residual,p50_signed_residual,p95_signed_residual,mean_absolute_rank_distance,p50_absolute_rank_distance,p95_absolute_rank_distance,max_absolute_rank_distance
+random_64,100000,global,existing,1000,-3.38,-133,-8,120,69.80,70,153,203
+random_64,100000,piecewise,existing,1000,-0.24,-13,0,12,6.60,6,15,26
+random_64,100000,global,in_range_missing,1000,-2.02,-132,-10,132,68.12,64,155,202
+random_64,100000,piecewise,in_range_missing,1000,-0.31,-14,0,13,6.38,5,16,24
+evenly_spaced,100000,global,existing,1000,0.00,0,0,0,0.00,0,0,0
+evenly_spaced,100000,piecewise,existing,1000,0.00,0,0,0,0.00,0,0,0
+evenly_spaced,100000,global,in_range_missing,1000,-0.05,0,0,0,0.05,0,0,1
+evenly_spaced,100000,piecewise,in_range_missing,1000,0.00,0,0,0,0.00,0,0,0
+clustered,100000,global,existing,1000,0.21,-111,-2,116,63.41,63,121,128
+clustered,100000,piecewise,existing,1000,0.26,-111,-2,115,62.90,62,120,127
+clustered,100000,global,in_range_missing,1000,-1.71,-117,-2,114,63.60,62,121,128
+clustered,100000,piecewise,in_range_missing,1000,-1.17,-113,0,109,47.11,41,119,128
+quadratic_gaps,100000,global,existing,1000,-576.27,-7877,-2233,13712,5799.34,5849,13712,18680
+quadratic_gaps,100000,piecewise,existing,1000,0.03,-3,0,3,2.01,1,7,126
+quadratic_gaps,100000,global,in_range_missing,1000,-124.59,-7872,-1935,14535,5982.84,5757,14535,18695
+quadratic_gaps,100000,piecewise,in_range_missing,1000,-0.50,-4,-1,3,2.26,1,8,139
