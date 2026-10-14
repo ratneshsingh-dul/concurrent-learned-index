@@ -46,6 +46,7 @@ add_executable(learned_index_tests
     tests/test_b_plus_tree.cpp
     tests/test_hot_query_workload.cpp
     tests/test_piecewise_learned_index.cpp
+    tests/test_rank_error_diagnostics.cpp
     benchmarks/benchmark_dataset.cpp
     )
 
