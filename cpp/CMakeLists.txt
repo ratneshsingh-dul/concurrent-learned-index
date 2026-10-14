@@ -36,6 +36,15 @@ target_link_libraries(learned_model_diagnostics
         learned_index
 )
 
+add_executable(learned_correction_diagnostics
+    apps/learned_correction_diagnostics.cpp
+    benchmarks/benchmark_dataset.cpp
+)
+target_link_libraries(learned_correction_diagnostics
+    PRIVATE
+        learned_index
+)
+
 add_executable(learned_index_tests
     tests/test_learned_index.cpp
     tests/test_sorted_dataset.cpp
