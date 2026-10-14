@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-13. This is an educational research prototype, not a
+Last verified: 2026-10-14. This is an educational research prototype, not a
 production database index. The implementation and experiment baseline is
 committed on `main` as `3080c5c`.
 
@@ -18,15 +18,16 @@ committed on `main` as `3080c5c`.
 - Insert-only adaptive learned index with an immutable learned base, ordered
   delta, configurable rebuild threshold, synchronous merge/retraining, and
   `std::shared_mutex` reader/writer coordination.
-- CMake targets for app, library, tests, benchmarks, and a learned-model rank
-  error report; raw benchmark output and per-trial records.
+- CMake targets for app, library, tests, benchmarks, learned-model rank-error
+  reports, and a seeded query correction-distance diagnostic; raw benchmark
+  output and per-trial records.
 
 ## Verification
 
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- `ctest --test-dir build-release --output-on-failure`: 45/45 tests passed.
+- `ctest --test-dir build-release --output-on-failure`: 47/47 tests passed.
 - `build-release/cpp/learned_index_app.exe` ran and demonstrated all four
   index modes.
 - `git diff --check` reported no whitespace errors.
@@ -39,6 +40,9 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 - Trial 008 compared global and piecewise models on four 100K-key shapes,
   including rank-error distributions, existing-key and in-range-miss lookup,
   and training cost; both raw CSVs are saved in `docs/experiments/`.
+- Trial 009 recorded signed rank residual and absolute distance from exact
+  lower-bound ranks for 1,000 existing and 1,000 in-range-missing queries per
+  shape and model.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -50,7 +54,9 @@ general performance rankings. No sanitizer or race detector was run.
    clustered, quadratic-gap, and one hot-query cases are recorded, but the
    segment-size trade-off, additional skew levels, hot-set sizes, and fresh-
    process repeats remain open.
-2. Correction distance and model residual distributions are not reported yet.
+2. Rank residual and absolute correction-distance distributions are reported
+   for seeded query samples, but actual probe counts and lookup latency by
+   correction distance still need direct measurement.
 3. The adaptive policy uses a configured count threshold. It does not estimate
    workload changes or tune that threshold automatically. Trial 003 shows that
    synchronous rebuild cost can dominate an update batch.

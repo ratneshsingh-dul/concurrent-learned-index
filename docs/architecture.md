@@ -71,6 +71,12 @@ reduce model error but add model storage, routing work, and training time; the
 segment size is configurable and has not yet been tuned beyond the initial
 comparison in Trial 008.
 
+`learned_correction_diagnostics` compares each model's predicted rank with the
+exact lower-bound insertion rank for seeded hits and in-range misses. The
+signed difference shows prediction bias; its absolute value is a rank-distance
+proxy for correction work. It does not count array probes or replace latency
+benchmarks. Trial 009 records the first sample and its limitations.
+
 ## Adaptive updates
 
 The adaptive index owns an immutable sorted base plus an ordered set of recent

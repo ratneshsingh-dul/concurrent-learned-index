@@ -73,6 +73,17 @@ benchmark shapes (the optional number sets the number of keys per shape):
 .\build-release\cpp\learned_model_diagnostics.exe 100000
 ```
 
+Measure signed prediction residuals and absolute rank distance for seeded
+existing-key and in-range-missing queries:
+
+```powershell
+.\build-release\cpp\learned_correction_diagnostics.exe 100000
+```
+
+Rank distance is the gap between the predicted rank and the exact lower-bound
+insertion rank. It is a correction-work proxy, not a count of search probes or
+a lookup-latency measurement.
+
 ## Benchmarking
 
 The suite covers exact membership, model training, B+ tree bulk load, batches
