@@ -5,6 +5,7 @@ add_library(learned_index
      src/index/binary_search_index.cpp
      src/index/learned_index.cpp
      src/index/piecewise_learned_index.cpp
+     src/index/rmi_learned_index.cpp
      src/index/adaptive_learned_index.cpp
      src/index/b_plus_tree.cpp
 )
@@ -56,6 +57,7 @@ add_executable(learned_index_tests
     tests/test_hot_query_workload.cpp
     tests/test_piecewise_learned_index.cpp
     tests/test_rank_error_diagnostics.cpp
+    tests/test_rmi_learned_index.cpp
     benchmarks/benchmark_dataset.cpp
     )
 
