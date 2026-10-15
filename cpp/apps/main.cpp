@@ -5,6 +5,7 @@
 #include <learned_index/index/b_plus_tree.hpp>
 #include <learned_index/index/binary_search_index.hpp>
 #include <learned_index/index/learned_index.hpp>
+#include <learned_index/index/rmi_learned_index.hpp>
 #include <learned_index/learned_index.hpp>
 
 int main() {
@@ -14,6 +15,7 @@ int main() {
     const learned_index::BinarySearchIndex binary(dataset);
     const auto tree = learned_index::BPlusTree::bulk_load(dataset);
     const learned_index::LearnedIndex learned(dataset);
+    const learned_index::RmiLearnedIndex rmi(dataset);
 
     std::cout << "Static indexes (query: 40)\n";
     std::cout << "  binary search position: ";
@@ -24,6 +26,7 @@ int main() {
     }
     std::cout << "  B+ tree contains: " << std::boolalpha << tree.contains(40) << '\n';
     std::cout << "  learned index contains: " << learned.contains(40) << '\n';
+    std::cout << "  RMI learned index contains: " << rmi.contains(40) << '\n';
 
     learned_index::AdaptiveLearnedIndex adaptive(dataset, 2);
     std::cout << "\nAdaptive index\n";
