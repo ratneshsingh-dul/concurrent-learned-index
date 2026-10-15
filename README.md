@@ -19,9 +19,10 @@ it is returned.
 | B+ tree | Exact | Unique-key insert | Linked-leaf scan | Caller-managed |
 | Learned index | Exact, with model correction | Static | — | Caller-managed |
 | Piecewise learned index | Exact, with per-segment model correction | Static | — | Caller-managed |
+| RMI learned index | Exact, root rank model + routed leaf model | Static | — | Caller-managed |
 | Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers, exclusive writer |
 
-The B+ tree and learned index are in-memory structures. The adaptive index is
+The indexes are in-memory structures. The adaptive index is
 insert-only, and a rebuild pauses readers. See the
 [implementation status](docs/STATUS.md) for scope and remaining work.
 
@@ -36,6 +37,9 @@ flowchart LR
     L --> C[Exponential bracket<br/>+ binary correction]
     D --> P[PiecewiseLearnedIndex<br/>linear model per segment]
     P --> PC[Segment selection<br/>+ exact correction]
+    D --> R[RmiLearnedIndex]
+    R --> RR[Root rank prediction<br/>routes to leaf model]
+    RR --> RC[Leaf prediction<br/>+ exact correction]
     D --> A[AdaptiveLearnedIndex]
     A --> S[Learned base snapshot]
     A --> X[Ordered insert delta]
@@ -90,8 +94,8 @@ The suite covers exact membership, model training, B+ tree bulk load, batches
 of 64 inserts, synchronous adaptive rebuilds, and inclusive range scans. Key
 shapes include random 64-bit, evenly spaced, clustered, and quadratic-gap
 datasets. Missing-key cases distinguish out-of-range misses from queries in
-actual gaps. Hot-query cases compare all three indexes with 90% of requests
-drawn from a fixed 1% hot-key set.
+actual gaps. Hot-query cases compare all five static lookup indexes with 90%
+of requests drawn from a fixed 1% hot-key set.
 
 Run the complete suite and save its raw output:
 
@@ -120,7 +124,10 @@ or browse the [full trial index](docs/experiments/README.md). The initial
 its raw measurements and limits. The first piecewise-model trial shows lower
 prediction error and faster lookup on quadratic-gap keys, with higher training
 cost and slower lookups on several other shapes; see
-[Trial 008](docs/experiments/trial-008-piecewise-learned-index.md).
+[Trial 008](docs/experiments/trial-008-piecewise-learned-index.md). The first
+RMI implementation is exact, but its initial comparison did not show a lookup
+advantage and its training was slower; see
+[Trial 010](docs/experiments/trial-010-rmi-index.md).
 
 ## Repository guide
 
@@ -139,12 +146,16 @@ docs/experiments/            trial write-ups and raw benchmark output
 - The global learned index remains the baseline. The optional piecewise model
   uses a fixed target segment size that has not been tuned across datasets;
   skew and hot-query behavior still need broader measurement.
+- The initial RMI is static, uses fixed-size rank leaves, and has not shown a
+  performance advantage in the first comparison. Its leaf-size and memory
+  trade-offs remain open.
 - Adaptive rebuild thresholds are configured manually. Rebuild work is
   synchronous and holds the exclusive lock.
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
-- Concurrent correctness has a test; concurrent throughput and race-detector
-  runs remain open.
+- Concurrent correctness has a test; concurrent throughput, writer contention,
+  rebuild latency, and race-detector runs remain open. The static RMI and B+
+  tree are not thread-safe interfaces.
 
 The project is complete only as an evolving prototype. The broader research
 work is still in progress; consult the [status and next steps](docs/STATUS.md)

@@ -1,7 +1,7 @@
 # Architecture and behavior
 
-The code compares four in-memory ways to answer exact membership queries over
-unique unsigned 64-bit keys. The common test and benchmark contract is
+The code compares several in-memory ways to answer exact membership queries
+over unique unsigned 64-bit keys. The common test and benchmark contract is
 `contains(key) -> bool`; the binary-search adapter and learned index also
 expose positions.
 
@@ -18,6 +18,7 @@ flowchart TB
       BT[BPlusTree<br/>bulk load + insert + range]
       LI[LearnedIndex<br/>regression predicts rank]
       PLI[PiecewiseLearnedIndex<br/>one regression per rank segment]
+      RMI[RmiLearnedIndex<br/>root rank model + routed leaf model]
       EC[Exact correction<br/>exponential bracket + binary search]
     end
     subgraph Mutable[Insert-changing structure]
@@ -33,6 +34,8 @@ flowchart TB
     LI --> EC
     SD --> PLI
     PLI --> EC
+    SD --> RMI
+    RMI --> EC
     SD --> ALI
     ALI --> BASE
     ALI --> DELTA
@@ -70,6 +73,15 @@ or imperfect fit cannot change membership correctness. More segments can
 reduce model error but add model storage, routing work, and training time; the
 segment size is configurable and has not yet been tuned beyond the initial
 comparison in Trial 008.
+
+The two-stage RMI uses its root regression to estimate a global rank and
+select one equal-rank leaf model. That leaf predicts a candidate position.
+Unlike the piecewise index, routing is learned from the root prediction rather
+than selected by searching segment key boundaries. The final correction may
+search the full dataset, so a routing error cannot produce a false membership
+answer. The target leaf size is configurable; training time, model memory, and
+the leaf-size trade-off still need broader evaluation. Trial 010 is an initial
+comparison and shows no performance win yet.
 
 `learned_correction_diagnostics` compares each model's predicted rank with the
 exact lower-bound insertion rank for seeded hits and in-range misses. The
