@@ -18,6 +18,7 @@ auditable.
 | [007](trial-007-hot-query-workload.md) | 2026-10-12 | How do the indexes compare when 90% of requests target a 1% hot key set? | B+ tree had the lowest median in one 100K-key run; repeat across hot-set sizes and fresh processes. |
 | [008](trial-008-piecewise-learned-index.md) | 2026-10-13 | Does a piecewise-linear rank model improve prediction and lookup on nonlinear key shapes enough to justify its training cost? | Quadratic-gap lookup improved substantially, while random/even/clustered lookups and model training were slower; results are shape-dependent and exploratory. |
 | [009](trial-009-correction-distance.md) | 2026-10-14 | How far do global and piecewise predictions sit from the true insertion rank for existing and in-range-missing queries? | Piecewise predictions substantially reduced sampled rank distance on random and quadratic-gap keys; rank distance is a correction-work proxy, not a probe count or latency result. |
+| [010](trial-010-rmi-index.md) | 2026-10-15 | How does a two-stage RMI compare with binary search, B+ tree, global learned, and piecewise learned lookups? | RMI was exact but did not lead in this first 100K-key sample and trained slower; broader segment-size and repeatability study remains. |
 
 ## Recording the next trial
 
