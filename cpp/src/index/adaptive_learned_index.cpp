@@ -29,37 +29,64 @@ bool AdaptiveLearnedIndex::contains(Key key) const {
 }
 
 bool AdaptiveLearnedIndex::insert(Key key) {
-    const std::unique_lock lock(mutex_);
+    std::unique_lock lock(mutex_);
     if (delta_.contains(key) || snapshot_->model.contains(key)) {
         return false;
     }
 
     delta_.insert(key);
     ++size_;
-    if (delta_.size() >= rebuild_threshold_) {
-        rebuild();
+    if (delta_.size() < rebuild_threshold_ || rebuild_in_progress_) {
+        return true;
     }
-    return true;
-}
 
-void AdaptiveLearnedIndex::rebuild() {
-    std::vector<Key> merged;
-    merged.reserve(size_);
-    std::size_t base_position = 0;
-    auto delta_position = delta_.begin();
-    while (base_position < snapshot_->dataset.size() || delta_position != delta_.end()) {
-        if (delta_position == delta_.end() ||
-            (base_position < snapshot_->dataset.size() &&
-             snapshot_->dataset[base_position] < *delta_position)) {
-            merged.push_back(snapshot_->dataset[base_position++]);
-        } else {
-            merged.push_back(*delta_position++);
+    rebuild_in_progress_ = true;
+    while (true) {
+        const auto base = snapshot_;
+        std::vector<Key> captured_delta;
+        try {
+            captured_delta.assign(delta_.begin(), delta_.end());
+        } catch (...) {
+            rebuild_in_progress_ = false;
+            throw;
+        }
+        lock.unlock();
+
+        std::shared_ptr<const Snapshot> rebuilt;
+        try {
+            std::vector<Key> merged;
+            merged.reserve(base->dataset.size() + captured_delta.size());
+            std::size_t base_position = 0;
+            auto delta_position = captured_delta.begin();
+            while (base_position < base->dataset.size() ||
+                   delta_position != captured_delta.end()) {
+                if (delta_position == captured_delta.end() ||
+                    (base_position < base->dataset.size() &&
+                     base->dataset[base_position] < *delta_position)) {
+                    merged.push_back(base->dataset[base_position++]);
+                } else {
+                    merged.push_back(*delta_position++);
+                }
+            }
+            rebuilt = std::make_shared<Snapshot>(SortedDataset(std::move(merged)));
+        } catch (...) {
+            lock.lock();
+            rebuild_in_progress_ = false;
+            throw;
+        }
+
+        lock.lock();
+        snapshot_ = std::move(rebuilt);
+        for (const Key captured_key : captured_delta) {
+            delta_.erase(captured_key);
+        }
+        ++rebuild_count_;
+
+        if (delta_.size() < rebuild_threshold_) {
+            rebuild_in_progress_ = false;
+            return true;
         }
     }
-
-    snapshot_ = std::make_shared<Snapshot>(SortedDataset(std::move(merged)));
-    delta_.clear();
-    ++rebuild_count_;
 }
 
 std::size_t AdaptiveLearnedIndex::size() const {

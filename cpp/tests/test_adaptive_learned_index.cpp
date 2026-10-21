@@ -82,26 +82,34 @@ TEST(AdaptiveLearnedIndexTest, SupportsConcurrentReadersAndWriter) {
             }
         });
     }
-    std::thread writer([&] {
-        start.store(true, std::memory_order_release);
-        for (Key key = 512; key < 1512; ++key) {
-            if (!index.insert(key * 2)) {
-                writer_failures.fetch_add(1, std::memory_order_relaxed);
+    std::vector<std::thread> writers;
+    for (const Key first : {Key{512}, Key{2000}}) {
+        writers.emplace_back([&, first] {
+            start.store(true, std::memory_order_release);
+            for (Key key = first; key < first + 1000; ++key) {
+                if (!index.insert(key * 2)) {
+                    writer_failures.fetch_add(1, std::memory_order_relaxed);
+                }
             }
-        }
-    });
-    writer.join();
+        });
+    }
+    for (auto& writer : writers) {
+        writer.join();
+    }
     for (auto& reader : readers) {
         reader.join();
     }
 
     EXPECT_EQ(reader_failures.load(), 0);
     EXPECT_EQ(writer_failures.load(), 0);
-    EXPECT_EQ(index.size(), 1256);
+    EXPECT_EQ(index.size(), 2256);
     for (Key key = 0; key < 256; ++key) {
         EXPECT_TRUE(index.contains(key * 2));
     }
     for (Key key = 512; key < 1512; ++key) {
+        EXPECT_TRUE(index.contains(key * 2));
+    }
+    for (Key key = 2000; key < 3000; ++key) {
         EXPECT_TRUE(index.contains(key * 2));
     }
 }

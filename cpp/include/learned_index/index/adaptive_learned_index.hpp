@@ -15,8 +15,9 @@ namespace learned_index {
 // An insert-only adaptive learned index for unique keys. A sorted immutable
 // base is searched through LearnedIndex while recent inserts live in an
 // ordered delta. Reaching rebuild_threshold merges the delta and retrains.
-// All public methods are thread-safe: lookups share a reader lock; inserts and
-// rebuilds take the exclusive lock. Rebuilding currently blocks readers.
+// All public methods are thread-safe. Rebuild computation uses a stable base
+// snapshot and captured delta outside the lock; publication takes the writer
+// lock briefly, so readers continue against the old snapshot during training.
 class AdaptiveLearnedIndex {
 private:
     struct Snapshot {
@@ -32,8 +33,7 @@ private:
     std::size_t size_;
     std::size_t rebuild_threshold_;
     std::size_t rebuild_count_ = 0;
-
-    void rebuild();
+    bool rebuild_in_progress_ = false;
 
 public:
     explicit AdaptiveLearnedIndex(
