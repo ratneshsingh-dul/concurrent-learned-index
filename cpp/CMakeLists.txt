@@ -46,6 +46,14 @@ target_link_libraries(learned_correction_diagnostics
         learned_index
 )
 
+add_executable(adaptive_concurrency_benchmark
+    apps/adaptive_concurrency_benchmark.cpp
+)
+target_link_libraries(adaptive_concurrency_benchmark
+    PRIVATE
+        learned_index
+)
+
 add_executable(learned_index_tests
     tests/test_learned_index.cpp
     tests/test_sorted_dataset.cpp

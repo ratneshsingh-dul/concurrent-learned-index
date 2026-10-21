@@ -107,6 +107,19 @@ Run the complete suite and save its raw output:
   --benchmark_out_format=csv
 ```
 
+Measure the adaptive index under simultaneous readers and one inserting writer
+(arguments are reader count, initial key count, and number of inserted keys):
+
+```powershell
+.\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500
+```
+
+The tool prints one CSV header and result row, including aggregate reader
+throughput, ordinary writer insert latency, and latency for insertions that
+trigger a rebuild. Each reader warms the lookup path before the timed phase.
+See [Trial 011](docs/experiments/trial-011-adaptive-concurrency.md) for the
+first repeated sample and its limitations.
+
 ### What the first measurements say
 
 The first 100K-key B+ tree trial had lower median membership and 64-key insert
