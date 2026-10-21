@@ -22,6 +22,9 @@ committed on `main` as `3080c5c`.
   delta, configurable rebuild threshold, and `std::shared_mutex`
   reader/writer coordination. Rebuild merge/training runs from a captured
   snapshot outside the lock; publication removes only the captured delta keys.
+- Standalone mixed reader/writer benchmark for the adaptive index, reporting
+  aggregate reader throughput, ordinary insert latency, and rebuild-trigger
+  insert latency; first repeated sample is Trial 011.
 - CMake targets for app, library, tests, benchmarks, learned-model rank-error
   reports, and a seeded query correction-distance diagnostic; raw benchmark
   output and per-trial records.
@@ -51,6 +54,10 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   RMI lookup on four 100K-key shapes; RMI was slower than at least one
   alternative in every measured case and had higher training time in this
   first sample.
+- Trial 011 ran five fresh processes each with 1, 4, and 8 readers concurrently
+  with one writer inserting 2,500 keys. Exact checks passed in every run;
+  reader throughput and rebuild-trigger latency are exploratory results with
+  scheduling variation, not a scalability claim.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
