@@ -20,12 +20,13 @@ it is returned.
 | Learned index | Exact, with model correction | Static | — | Caller-managed |
 | Piecewise learned index | Exact, with per-segment model correction | Static | — | Caller-managed |
 | RMI learned index | Exact, root rank model + routed leaf model | Static | — | Caller-managed |
-| Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers; rebuild computation off-lock |
+| Adaptive learned index | Exact, selectable global or RMI base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers; rebuild computation off-lock |
 
 The indexes are in-memory structures. The adaptive index is
-insert-only. Rebuild computation runs while readers continue against the
-previous base snapshot and current delta; short publication steps still
-coordinate through the writer lock. See the
+insert-only; it can retrain either its global linear model or a two-stage RMI
+after inserts accumulate. Rebuild computation runs while readers continue
+against the previous base snapshot and current delta; short publication steps
+still coordinate through the writer lock. See the
 [implementation status](docs/STATUS.md) for scope and remaining work.
 
 ## How the pieces fit
@@ -108,17 +109,20 @@ Run the complete suite and save its raw output:
 ```
 
 Measure the adaptive index under simultaneous readers and one inserting writer
-(arguments are reader count, initial key count, and number of inserted keys):
+(arguments are reader count, initial key count, inserted key count, optional
+model choice, and optional RMI leaf size):
 
 ```powershell
 .\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500
+.\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500 rmi 1024
 ```
 
 The tool prints one CSV header and result row, including aggregate reader
 throughput, ordinary writer insert latency, and latency for insertions that
 trigger a rebuild. Each reader warms the lookup path before the timed phase.
 See [Trial 011](docs/experiments/trial-011-adaptive-concurrency.md) for the
-first repeated sample and its limitations.
+global-model first sample and [Trial 012](docs/experiments/trial-012-adaptive-rmi.md)
+for the first global-versus-RMI dynamic-base comparison.
 
 ### What the first measurements say
 
@@ -149,8 +153,9 @@ advantage and its training was slower; see
 ```text
 cpp/include/learned_index/   public data types and index interfaces
 cpp/src/                     index implementations
+cpp/apps/                    walkthroughs and diagnostic tools
 cpp/tests/                   correctness and concurrency tests
-cpp/benchmarks/              reproducible workload definitions
+cpp/benchmarks/              Google Benchmark workload definitions
 docs/STATUS.md               implemented scope and open work
 docs/architecture.md         diagrams and behavior notes
 docs/experiments/            trial write-ups and raw benchmark output
@@ -161,9 +166,9 @@ docs/experiments/            trial write-ups and raw benchmark output
 - The global learned index remains the baseline. The optional piecewise model
   uses a fixed target segment size that has not been tuned across datasets;
   skew and hot-query behavior still need broader measurement.
-- The initial RMI is static, uses fixed-size rank leaves, and has not shown a
-  performance advantage in the first comparison. Its leaf-size and memory
-  trade-offs remain open.
+- The standalone RMI is static; the adaptive index can select and retrain an
+  RMI base with a configured leaf size. The first dynamic comparison is
+  exploratory; broader leaf-size, data-shape, and memory trade-offs remain.
 - Adaptive rebuild thresholds are configured manually. The writer that
   triggers a rebuild waits for merge and training to finish, while readers
   continue against the old snapshot and delta. A newer snapshot is published
@@ -171,9 +176,10 @@ docs/experiments/            trial write-ups and raw benchmark output
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
 - Concurrent correctness covers multiple readers and writers during repeated
-  rebuilds. Concurrent throughput, writer latency, rebuild latency, and
-  race-detector runs remain open. The static RMI and B+ tree are not
-  thread-safe interfaces.
+  rebuilds. Initial global/RMI reader-throughput and rebuild-latency samples
+  are recorded in Trials 011–012; broader workload mixes and race-detector
+  runs remain open. The standalone static RMI and B+ tree interfaces are not
+  thread-safe.
 
 The project is complete only as an evolving prototype. The broader research
 work is still in progress; consult the [status and next steps](docs/STATUS.md)

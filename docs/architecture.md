@@ -23,7 +23,7 @@ flowchart TB
     end
     subgraph Mutable[Insert-changing structure]
       ALI[AdaptiveLearnedIndex]
-      BASE[Immutable learned snapshot]
+      BASE[Immutable global or RMI snapshot]
       DELTA[Ordered delta set]
       MERGE[Merge sorted keys<br/>fit new model]
     end
@@ -127,6 +127,15 @@ asynchronous from the triggering writer: that insert waits for merge/training
 and publication. Lookup still takes a shared lock, and this is neither
 lock-free nor a measured latency guarantee. Concurrent performance and
 race-detector checks remain future work.
+
+`AdaptiveLearnedIndex` selects its base model at construction. The default is
+the global linear model; callers can choose `ModelKind::rmi` and an RMI leaf
+size. Every published snapshot and every subsequent retraining keeps that
+choice, so the update path can evolve an RMI-backed base as inserted keys
+arrive. Exact correction remains inside each model lookup. The first mixed
+reader/writer comparison is recorded in Trial 012; it is a small sample on one
+evenly spaced dataset and does not establish that either model is generally
+faster.
 
 ## B+ tree behavior
 
