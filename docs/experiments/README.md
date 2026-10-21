@@ -20,6 +20,7 @@ auditable.
 | [009](trial-009-correction-distance.md) | 2026-10-14 | How far do global and piecewise predictions sit from the true insertion rank for existing and in-range-missing queries? | Piecewise predictions substantially reduced sampled rank distance on random and quadratic-gap keys; rank distance is a correction-work proxy, not a probe count or latency result. |
 | [010](trial-010-rmi-index.md) | 2026-10-15 | How does a two-stage RMI compare with binary search, B+ tree, global learned, and piecewise learned lookups? | RMI was exact but did not lead in this first 100K-key sample and trained slower; broader segment-size and repeatability study remains. |
 | [011](trial-011-adaptive-concurrency.md) | 2026-10-21 | What happens to adaptive-index reader throughput and insert/rebuild latency during mixed reads and writes? | Exact results in all runs; reader throughput was lower with 4–8 readers than with one, and a scheduling outlier reinforces that this first Windows sample is exploratory. |
+| [012](trial-012-adaptive-rmi.md) | 2026-10-22 | Can the adaptive index retain an RMI base through rebuilds, and how do its first mixed-workload measurements compare with the global model? | Exact in every run. RMI had higher sampled reader throughput and longer rebuild-trigger inserts than the global model on this evenly spaced dataset; three repetitions per setting are preliminary. |
 
 ## Recording the next trial
 
