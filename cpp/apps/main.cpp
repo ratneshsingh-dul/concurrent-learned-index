@@ -34,5 +34,16 @@ int main() {
     std::cout << "  insert 54: " << adaptive.insert(54) << '\n';
     std::cout << "  contains 54 after delta merge/retrain: " << adaptive.contains(54) << '\n';
     std::cout << "  rebuild count: " << adaptive.rebuild_count() << '\n';
+
+    learned_index::AdaptiveLearnedIndex adaptive_rmi(
+        dataset, 2, learned_index::AdaptiveLearnedIndex::ModelKind::rmi, 2
+    );
+    if (!adaptive_rmi.insert(42) || !adaptive_rmi.insert(54)) {
+        return 1;
+    }
+    std::cout << "\nAdaptive RMI index\n";
+    std::cout << "  contains 54 after RMI retraining: "
+              << adaptive_rmi.contains(54) << '\n';
+    std::cout << "  rebuild count: " << adaptive_rmi.rebuild_count() << '\n';
     return 0;
 }

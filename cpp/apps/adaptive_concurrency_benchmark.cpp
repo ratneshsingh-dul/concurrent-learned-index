@@ -45,9 +45,10 @@ double percentile_us(std::vector<double> samples, double percentile) {
 
 int main(int argc, char** argv) {
     try {
-        if (argc != 4) {
+        if (argc < 4 || argc > 6) {
             std::cerr << "Usage: adaptive_concurrency_benchmark "
-                         "<reader_threads> <dataset_size> <writer_inserts>\n";
+                         "<reader_threads> <dataset_size> <writer_inserts> "
+                         "[global|rmi] [rmi_leaf_size]\n";
             return 2;
         }
         const auto reader_count = static_cast<std::size_t>(
@@ -59,6 +60,21 @@ int main(int argc, char** argv) {
         const auto writer_inserts = static_cast<std::size_t>(
             parse_count(argv[3], "writer_inserts")
         );
+        auto model_kind = learned_index::AdaptiveLearnedIndex::ModelKind::global;
+        std::size_t rmi_leaf_size = 1024;
+        if (argc >= 5) {
+            const std::string model_name(argv[4]);
+            if (model_name == "rmi") {
+                model_kind = learned_index::AdaptiveLearnedIndex::ModelKind::rmi;
+                if (argc == 6) {
+                    rmi_leaf_size = static_cast<std::size_t>(
+                        parse_count(argv[5], "rmi_leaf_size")
+                    );
+                }
+            } else if (model_name != "global" || argc == 6) {
+                throw std::invalid_argument("model must be global or rmi");
+            }
+        }
         if (dataset_size > std::numeric_limits<learned_index::Key>::max() / 2 ||
             writer_inserts > std::numeric_limits<learned_index::Key>::max() / 2 - dataset_size) {
             throw std::invalid_argument("requested key range overflows uint64_t");
@@ -70,7 +86,8 @@ int main(int argc, char** argv) {
             initial_keys.push_back(static_cast<learned_index::Key>(i) * 2);
         }
         learned_index::AdaptiveLearnedIndex index(
-            learned_index::SortedDataset(std::move(initial_keys)), 256
+            learned_index::SortedDataset(std::move(initial_keys)), 256,
+            model_kind, rmi_leaf_size
         );
 
         std::barrier start(static_cast<std::ptrdiff_t>(reader_count + 1));
@@ -137,10 +154,14 @@ int main(int argc, char** argv) {
             exact = index.contains(key);
         }
         const auto reads = total_reads.load(std::memory_order_relaxed);
-        std::cout << "reader_threads,dataset_size,writer_inserts,read_ops,elapsed_seconds,"
+        const char* model_name = model_kind ==
+            learned_index::AdaptiveLearnedIndex::ModelKind::rmi ? "rmi" : "global";
+        std::cout << "model,reader_threads,dataset_size,writer_inserts,rmi_leaf_size,"
+                     "read_ops,elapsed_seconds,"
                      "read_ops_per_second,writer_p50_us,writer_p95_us,rebuild_p50_us,"
                      "rebuild_p95_us,rebuild_max_us,rebuild_count,exact\n";
-        std::cout << reader_count << ',' << dataset_size << ',' << writer_inserts << ','
+        std::cout << model_name << ',' << reader_count << ',' << dataset_size << ','
+                  << writer_inserts << ',' << rmi_leaf_size << ','
                   << reads << ',' << elapsed_seconds << ','
                   << static_cast<double>(reads) / elapsed_seconds << ','
                   << percentile_us(insert_latency_us, 0.50) << ','
