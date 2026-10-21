@@ -20,10 +20,12 @@ it is returned.
 | Learned index | Exact, with model correction | Static | — | Caller-managed |
 | Piecewise learned index | Exact, with per-segment model correction | Static | — | Caller-managed |
 | RMI learned index | Exact, root rank model + routed leaf model | Static | — | Caller-managed |
-| Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers, exclusive writer |
+| Adaptive learned index | Exact, learned base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers; rebuild computation off-lock |
 
 The indexes are in-memory structures. The adaptive index is
-insert-only, and a rebuild pauses readers. See the
+insert-only. Rebuild computation runs while readers continue against the
+previous base snapshot and current delta; short publication steps still
+coordinate through the writer lock. See the
 [implementation status](docs/STATUS.md) for scope and remaining work.
 
 ## How the pieces fit
@@ -149,13 +151,16 @@ docs/experiments/            trial write-ups and raw benchmark output
 - The initial RMI is static, uses fixed-size rank leaves, and has not shown a
   performance advantage in the first comparison. Its leaf-size and memory
   trade-offs remain open.
-- Adaptive rebuild thresholds are configured manually. Rebuild work is
-  synchronous and holds the exclusive lock.
+- Adaptive rebuild thresholds are configured manually. The writer that
+  triggers a rebuild waits for merge and training to finish, while readers
+  continue against the old snapshot and delta. A newer snapshot is published
+  under the lock after training.
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
-- Concurrent correctness has a test; concurrent throughput, writer contention,
-  rebuild latency, and race-detector runs remain open. The static RMI and B+
-  tree are not thread-safe interfaces.
+- Concurrent correctness covers multiple readers and writers during repeated
+  rebuilds. Concurrent throughput, writer latency, rebuild latency, and
+  race-detector runs remain open. The static RMI and B+ tree are not
+  thread-safe interfaces.
 
 The project is complete only as an evolving prototype. The broader research
 work is still in progress; consult the [status and next steps](docs/STATUS.md)

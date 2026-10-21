@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-15. This is an educational research prototype, not a
+Last verified: 2026-10-21. This is an educational research prototype, not a
 production database index. The implementation and experiment baseline is
 committed on `main` as `3080c5c`.
 
@@ -19,8 +19,9 @@ committed on `main` as `3080c5c`.
   local leaf models, configurable leaf size, and exact global correction.
   Initial correctness and one exploratory performance comparison are recorded.
 - Insert-only adaptive learned index with an immutable learned base, ordered
-  delta, configurable rebuild threshold, synchronous merge/retraining, and
-  `std::shared_mutex` reader/writer coordination.
+  delta, configurable rebuild threshold, and `std::shared_mutex`
+  reader/writer coordination. Rebuild merge/training runs from a captured
+  snapshot outside the lock; publication removes only the captured delta keys.
 - CMake targets for app, library, tests, benchmarks, learned-model rank-error
   reports, and a seeded query correction-distance diagnostic; raw benchmark
   output and per-trial records.
@@ -67,11 +68,13 @@ general performance rankings. No sanitizer or race detector was run.
 3. The adaptive policy uses a configured count threshold. It does not estimate
    workload changes or tune that threshold automatically. Trial 003 shows that
    synchronous rebuild cost can dominate an update batch.
-4. Rebuild holds the exclusive lock, so readers pause during merge and model
-   training. Concurrent correctness has a test, but concurrent throughput,
-   latency under writes, and race-sanitizer coverage remain to be measured.
-   A broader concurrency milestone, including the intended guarantees and
-   supported structures, is still required; the RMI is currently static.
+4. Concurrent correctness now covers multiple readers and writers while
+   rebuilds publish snapshots. Rebuild merge/training no longer holds the
+   exclusive lock, but the triggering writer remains synchronous and readers
+   still acquire a shared lock. Concurrent throughput, write/rebuild latency,
+   and race-sanitizer coverage remain to be measured. Broader concurrency
+   guarantees and supported structures remain to be established; the RMI is
+   currently static.
 5. Updates support insertion only. Deletion, tombstones, persistence, crash
    recovery, B+ tree concurrency, and lock-free access are outside the current
    prototype.

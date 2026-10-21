@@ -111,10 +111,22 @@ flowchart LR
     CLEAR --> OK
 ```
 
-The implementation protects reads with a shared mutex lock and updates with
-an exclusive lock. Multiple lookups may proceed together. Inserts and the
-entire rebuild block lookups; this is correctness-oriented synchronization,
-not a lock-free or latency-optimized design.
+The implementation protects lookups and updates with a shared mutex. Multiple
+lookups may proceed together. An insert that reaches the threshold captures a
+shared pointer to the current immutable snapshot and copies the pending delta
+while holding the writer lock. It then merges and trains a replacement
+snapshot without holding the lock. Other lookups continue to query the old
+snapshot plus the full delta; other inserts can append to that delta while the
+training proceeds. Publication swaps in the trained snapshot and erases only
+the keys included in that build, keeping later inserts visible in the delta.
+If those later inserts already meet the threshold, the publishing writer
+starts another build.
+
+This shortens the exclusive-lock window, but it does not make rebuilding
+asynchronous from the triggering writer: that insert waits for merge/training
+and publication. Lookup still takes a shared lock, and this is neither
+lock-free nor a measured latency guarantee. Concurrent performance and
+race-detector checks remain future work.
 
 ## B+ tree behavior
 
