@@ -8,29 +8,53 @@
 
 namespace learned_index {
 
-AdaptiveLearnedIndex::Snapshot::Snapshot(SortedDataset data)
-    : dataset(std::move(data)), model(dataset) {}
+AdaptiveLearnedIndex::Snapshot::Snapshot(
+    SortedDataset data,
+    ModelKind model_kind,
+    std::size_t rmi_leaf_size
+)
+    : dataset(std::move(data)),
+      model(model_kind == ModelKind::rmi
+          ? std::variant<LearnedIndex, RmiLearnedIndex>(
+                std::in_place_type<RmiLearnedIndex>, dataset, rmi_leaf_size
+            )
+          : std::variant<LearnedIndex, RmiLearnedIndex>(
+                std::in_place_type<LearnedIndex>, dataset
+            )) {}
 
 AdaptiveLearnedIndex::AdaptiveLearnedIndex(
     SortedDataset initial,
-    std::size_t rebuild_threshold
+    std::size_t rebuild_threshold,
+    ModelKind model_kind,
+    std::size_t rmi_leaf_size
 )
-    : snapshot_(std::make_shared<Snapshot>(std::move(initial))),
+    : snapshot_(std::make_shared<Snapshot>(
+          std::move(initial), model_kind, rmi_leaf_size
+      )),
       size_(snapshot_->dataset.size()),
-      rebuild_threshold_(rebuild_threshold) {
+      rebuild_threshold_(rebuild_threshold),
+      model_kind_(model_kind),
+      rmi_leaf_size_(rmi_leaf_size) {
     if (rebuild_threshold_ == 0) {
         throw std::invalid_argument("rebuild_threshold must be greater than zero");
+    }
+    if (model_kind_ == ModelKind::rmi && rmi_leaf_size_ == 0) {
+        throw std::invalid_argument("rmi_leaf_size must be greater than zero");
     }
 }
 
 bool AdaptiveLearnedIndex::contains(Key key) const {
     const std::shared_lock lock(mutex_);
-    return delta_.contains(key) || snapshot_->model.contains(key);
+    return delta_.contains(key) || std::visit(
+        [key](const auto& model) { return model.contains(key); }, snapshot_->model
+    );
 }
 
 bool AdaptiveLearnedIndex::insert(Key key) {
     std::unique_lock lock(mutex_);
-    if (delta_.contains(key) || snapshot_->model.contains(key)) {
+    if (delta_.contains(key) || std::visit(
+            [key](const auto& model) { return model.contains(key); }, snapshot_->model
+        )) {
         return false;
     }
 
@@ -68,7 +92,9 @@ bool AdaptiveLearnedIndex::insert(Key key) {
                     merged.push_back(*delta_position++);
                 }
             }
-            rebuilt = std::make_shared<Snapshot>(SortedDataset(std::move(merged)));
+            rebuilt = std::make_shared<Snapshot>(
+                SortedDataset(std::move(merged)), model_kind_, rmi_leaf_size_
+            );
         } catch (...) {
             lock.lock();
             rebuild_in_progress_ = false;

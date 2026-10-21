@@ -18,6 +18,15 @@ TEST(AdaptiveLearnedIndexTest, RejectsZeroRebuildThreshold) {
     EXPECT_THROW(AdaptiveLearnedIndex(SortedDataset({}), 0), std::invalid_argument);
 }
 
+TEST(AdaptiveLearnedIndexTest, RejectsZeroRmiLeafSize) {
+    EXPECT_THROW(
+        AdaptiveLearnedIndex(
+            SortedDataset({}), 8, AdaptiveLearnedIndex::ModelKind::rmi, 0
+        ),
+        std::invalid_argument
+    );
+}
+
 TEST(AdaptiveLearnedIndexTest, InsertsInDeltaAndRebuildsAtThreshold) {
     AdaptiveLearnedIndex index(SortedDataset({10, 20, 30}), 3);
     EXPECT_TRUE(index.insert(25));
@@ -56,6 +65,27 @@ TEST(AdaptiveLearnedIndexTest, RandomizedUpdatesMatchOrderedSetAcrossRebuilds) {
         const Key key = i * 7;
         EXPECT_EQ(index.contains(key), reference.contains(key));
     }
+}
+
+TEST(AdaptiveLearnedIndexTest, RebuildsWithRmiModelAndKeepsExactMembership) {
+    AdaptiveLearnedIndex index(
+        SortedDataset({10, 20, 30, 40}), 3,
+        AdaptiveLearnedIndex::ModelKind::rmi, 2
+    );
+    for (const Key key : {25, 5, 50, 35, 60, 15, 45}) {
+        EXPECT_TRUE(index.insert(key));
+        EXPECT_TRUE(index.contains(key));
+    }
+    EXPECT_EQ(index.size(), 11);
+    EXPECT_GT(index.rebuild_count(), 1);
+    EXPECT_EQ(index.pending_size(), 1);
+    for (const Key key : {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60}) {
+        EXPECT_TRUE(index.contains(key));
+    }
+    for (const Key key : {0, 12, 55, 70}) {
+        EXPECT_FALSE(index.contains(key));
+    }
+    EXPECT_FALSE(index.insert(25));
 }
 
 TEST(AdaptiveLearnedIndexTest, SupportsConcurrentReadersAndWriter) {
