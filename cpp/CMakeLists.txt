@@ -48,6 +48,11 @@ target_link_libraries(learned_correction_diagnostics
 
 add_executable(adaptive_concurrency_benchmark
     apps/adaptive_concurrency_benchmark.cpp
+    benchmarks/benchmark_dataset.cpp
+)
+target_include_directories(adaptive_concurrency_benchmark
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks
 )
 target_link_libraries(adaptive_concurrency_benchmark
     PRIVATE
