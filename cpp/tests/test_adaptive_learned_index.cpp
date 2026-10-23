@@ -88,6 +88,63 @@ TEST(AdaptiveLearnedIndexTest, RebuildsWithRmiModelAndKeepsExactMembership) {
     EXPECT_FALSE(index.insert(25));
 }
 
+TEST(AdaptiveLearnedIndexTest, AutomaticPolicyKeepsGlobalForLinearKeys) {
+    std::vector<Key> keys;
+    for (Key i = 0; i < 512; ++i) {
+        keys.push_back(i * 10);
+    }
+    AdaptiveLearnedIndex index(
+        SortedDataset(std::move(keys)), 8,
+        AdaptiveLearnedIndex::ModelKind::automatic, 32
+    );
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::global);
+    for (Key i = 512; i < 520; ++i) {
+        EXPECT_TRUE(index.insert(i * 10));
+    }
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::global);
+    EXPECT_EQ(index.rebuild_count(), 1);
+}
+
+TEST(AdaptiveLearnedIndexTest, AutomaticPolicySelectsRmiForQuadraticKeys) {
+    std::vector<Key> keys;
+    for (Key i = 0; i < 1024; ++i) {
+        keys.push_back(i * i);
+    }
+    AdaptiveLearnedIndex index(
+        SortedDataset(std::move(keys)), 32,
+        AdaptiveLearnedIndex::ModelKind::automatic, 64
+    );
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::rmi);
+    for (Key i = 0; i < 1024; ++i) {
+        EXPECT_TRUE(index.contains(i * i));
+    }
+    EXPECT_FALSE(index.contains(2048));
+    for (Key i = 1024; i < 1056; ++i) {
+        EXPECT_TRUE(index.insert(i * i));
+    }
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::rmi);
+    EXPECT_EQ(index.rebuild_count(), 1);
+}
+
+TEST(AdaptiveLearnedIndexTest, AutomaticPolicyCanChangeModelAfterRebuild) {
+    std::vector<Key> keys;
+    for (Key i = 0; i < 10000; ++i) {
+        keys.push_back(i * 2);
+    }
+    AdaptiveLearnedIndex index(
+        SortedDataset(std::move(keys)), 256,
+        AdaptiveLearnedIndex::ModelKind::automatic, 128
+    );
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::global);
+    for (Key i = 0; i < 256; ++i) {
+        EXPECT_TRUE(index.insert(20000 + i));
+    }
+    EXPECT_EQ(index.rebuild_count(), 1);
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::rmi);
+    EXPECT_TRUE(index.contains(20000));
+    EXPECT_TRUE(index.contains(20255));
+}
+
 TEST(AdaptiveLearnedIndexTest, SupportsConcurrentReadersAndWriter) {
     std::vector<Key> initial_keys;
     for (Key key = 0; key < 256; ++key) {

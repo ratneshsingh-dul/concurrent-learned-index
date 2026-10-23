@@ -15,8 +15,8 @@
 namespace learned_index {
 
 // An insert-only adaptive learned index for unique keys. A sorted immutable
-// base is searched through LearnedIndex while recent inserts live in an
-// ordered delta. Reaching rebuild_threshold merges the delta and retrains.
+// learned base (global model, RMI, or automatic choice) is searched alongside
+// an ordered delta. Reaching rebuild_threshold merges the delta and retrains.
 // All public methods are thread-safe. Rebuild computation uses a stable base
 // snapshot and captured delta outside the lock; publication takes the writer
 // lock briefly, so readers continue against the old snapshot during training.
@@ -24,13 +24,17 @@ class AdaptiveLearnedIndex {
 public:
     enum class ModelKind {
         global,
-        rmi
+        rmi,
+        // At each build, choose RMI only when sampled mean absolute rank error
+        // is at least 20% lower than the global model's error.
+        automatic
     };
 
 private:
     struct Snapshot {
         SortedDataset dataset;
         std::variant<LearnedIndex, RmiLearnedIndex> model;
+        ModelKind selected_model_kind;
 
         explicit Snapshot(
             SortedDataset data,
@@ -44,7 +48,7 @@ private:
     std::set<Key> delta_;
     std::size_t size_;
     std::size_t rebuild_threshold_;
-    ModelKind model_kind_;
+    ModelKind model_policy_;
     std::size_t rmi_leaf_size_;
     std::size_t rebuild_count_ = 0;
     bool rebuild_in_progress_ = false;
@@ -62,6 +66,7 @@ public:
     [[nodiscard]] std::size_t size() const;
     [[nodiscard]] std::size_t pending_size() const;
     [[nodiscard]] std::size_t rebuild_count() const;
+    [[nodiscard]] ModelKind selected_model_kind() const;
 };
 
 static_assert(Index<AdaptiveLearnedIndex>);
