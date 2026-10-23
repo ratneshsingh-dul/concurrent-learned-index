@@ -128,14 +128,19 @@ and publication. Lookup still takes a shared lock, and this is neither
 lock-free nor a measured latency guarantee. Concurrent performance and
 race-detector checks remain future work.
 
-`AdaptiveLearnedIndex` selects its base model at construction. The default is
-the global linear model; callers can choose `ModelKind::rmi` and an RMI leaf
-size. Every published snapshot and every subsequent retraining keeps that
-choice, so the update path can evolve an RMI-backed base as inserted keys
-arrive. Exact correction remains inside each model lookup. The first mixed
-reader/writer comparison is recorded in Trial 012; it is a small sample on one
-evenly spaced dataset and does not establish that either model is generally
-faster.
+`AdaptiveLearnedIndex` supports three policies: `ModelKind::global` (the
+default), `ModelKind::rmi`, and `ModelKind::automatic`. Manual policies persist
+through every rebuild. Automatic mode trains both candidates on the merged
+snapshot, samples up to 256 evenly spaced key positions, and compares mean
+absolute rank prediction error. It publishes the RMI only if its sampled error
+is at least 20% lower; otherwise it publishes the global model. The active
+choice is observable through `selected_model_kind()` and can change after a
+later rebuild. Exact correction remains inside each model lookup.
+
+This first automatic policy is deliberately simple and deterministic. It uses
+data-fit error as a proxy; it does not estimate query frequency, training cost,
+or model memory. Trial 013 records its choices and rebuild costs across four
+key shapes. Trials 011–012 record the earlier manual global/RMI comparisons.
 
 ## B+ tree behavior
 

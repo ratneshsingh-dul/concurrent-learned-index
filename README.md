@@ -20,11 +20,12 @@ it is returned.
 | Learned index | Exact, with model correction | Static | — | Caller-managed |
 | Piecewise learned index | Exact, with per-segment model correction | Static | — | Caller-managed |
 | RMI learned index | Exact, root rank model + routed leaf model | Static | — | Caller-managed |
-| Adaptive learned index | Exact, selectable global or RMI base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers; rebuild computation off-lock |
+| Adaptive learned index | Exact, automatic/global/RMI base + ordered delta | Insert; synchronous merge/retrain | — | Shared readers; rebuild computation off-lock |
 
 The indexes are in-memory structures. The adaptive index is
-insert-only; it can retrain either its global linear model or a two-stage RMI
-after inserts accumulate. Rebuild computation runs while readers continue
+insert-only; it can retrain its global linear model or a two-stage RMI after
+inserts accumulate, or choose between them using sampled rank error at each
+rebuild. Rebuild computation runs while readers continue
 against the previous base snapshot and current delta; short publication steps
 still coordinate through the writer lock. See the
 [implementation status](docs/STATUS.md) for scope and remaining work.
@@ -115,6 +116,7 @@ model choice, and optional RMI leaf size):
 ```powershell
 .\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500
 .\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500 rmi 1024
+.\build-release\cpp\adaptive_concurrency_benchmark.exe 4 100000 2500 auto 1024 random
 ```
 
 The tool prints one CSV header and result row, including aggregate reader
@@ -123,6 +125,12 @@ trigger a rebuild. Each reader warms the lookup path before the timed phase.
 See [Trial 011](docs/experiments/trial-011-adaptive-concurrency.md) for the
 global-model first sample and [Trial 012](docs/experiments/trial-012-adaptive-rmi.md)
 for the first global-versus-RMI dynamic-base comparison.
+
+Automatic mode samples up to 256 evenly spaced keys from each candidate base
+and selects RMI only when its mean absolute rank prediction error is at least
+20% lower than the global model's. This deterministic data-fit rule does not
+observe a live query distribution or account for RMI training time or memory.
+Trial 013 records its initial behavior across four key shapes.
 
 ### What the first measurements say
 
@@ -169,10 +177,11 @@ docs/experiments/            trial write-ups and raw benchmark output
 - The standalone RMI is static; the adaptive index can select and retrain an
   RMI base with a configured leaf size. The first dynamic comparison is
   exploratory; broader leaf-size, data-shape, and memory trade-offs remain.
-- Adaptive rebuild thresholds are configured manually. The writer that
-  triggers a rebuild waits for merge and training to finish, while readers
-  continue against the old snapshot and delta. A newer snapshot is published
-  under the lock after training.
+- Adaptive rebuild thresholds are configured manually. Automatic mode trains
+  both model candidates on rebuild and considers sampled rank error only; it
+  does not optimize runtime workload mix, build cost, or model memory. The
+  writer that triggers a rebuild waits for training while readers continue
+  against the old snapshot and delta.
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
 - Concurrent correctness covers multiple readers and writers during repeated

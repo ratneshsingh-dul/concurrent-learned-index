@@ -21,8 +21,9 @@ committed on `main` as `3080c5c`.
 - Insert-only adaptive learned index with an immutable learned base, ordered
   delta, configurable rebuild threshold, and `std::shared_mutex`
   reader/writer coordination. It can retrain either the global model or a
-  configurable-leaf-size RMI from a captured snapshot outside the lock;
-  publication removes only the captured delta keys.
+  configurable-leaf-size RMI, or automatically choose between them at each
+  rebuild from sampled rank prediction error. Rebuild trains from a captured
+  snapshot outside the lock; publication removes only the captured delta keys.
 - Standalone mixed reader/writer benchmark for the adaptive index, reporting
   aggregate reader throughput, ordinary insert latency, and rebuild-trigger
   insert latency; first repeated sample is Trial 011.
@@ -35,7 +36,7 @@ committed on `main` as `3080c5c`.
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- `ctest --test-dir build-release --output-on-failure`: 53/53 tests passed.
+- `ctest --test-dir build-release --output-on-failure`: 56/56 tests passed.
 - `build-release/cpp/learned_index_app.exe` ran and demonstrated binary
   search, B+ tree, global learned, RMI, and adaptive index behavior.
 - `git diff --check` reported no whitespace errors.
@@ -63,6 +64,9 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   1,024, at 1 and 4 readers, three fresh processes per setting. Exact checks
   passed in all runs; the first sample suggests a read-throughput versus
   rebuild-latency trade-off that needs broader, less noisy trials.
+- Trial 013 compared forced global and automatic selection across four
+  deterministic shapes. Automatic mode chose RMI only for the random-key
+  shape after one rebuild in this sample; exact checks passed in every run.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -78,9 +82,10 @@ general performance rankings. No sanitizer or race detector was run.
 2. Rank residual and absolute correction-distance distributions are reported
    for seeded query samples, but actual probe counts and lookup latency by
    correction distance still need direct measurement.
-3. The adaptive policy uses a configured count threshold. It does not estimate
-   workload changes or tune that threshold automatically. Trial 003 shows that
-   synchronous rebuild cost can dominate an update batch.
+3. The adaptive rebuild threshold remains configured manually. Automatic model
+   selection retrains both candidates and compares sampled prediction error;
+   it does not account for query frequencies, RMI model memory, or training
+   time. Trial 003 shows synchronous rebuild cost can dominate an update batch.
 4. Concurrent correctness covers multiple readers and writers while rebuilds
    publish snapshots. Trials 011–012 provide initial throughput and
    write/rebuild-latency samples, but broader mixes and race-sanitizer coverage
