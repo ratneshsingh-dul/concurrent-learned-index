@@ -27,6 +27,8 @@ committed on `main`.
 - Standalone mixed reader/writer benchmark for the adaptive index, reporting
   aggregate reader throughput, ordinary insert latency, and rebuild-trigger
   insert latency; first repeated sample is Trial 011.
+- Static lookup benchmarks for RMI leaf sizes 256, 512, 1,024, and 2,048,
+  using existing-key hits and in-range misses across four deterministic shapes.
 - CMake targets for app, library, tests, benchmarks, learned-model rank-error
   reports, and a seeded query correction-distance diagnostic; raw benchmark
   output and per-trial records.
@@ -37,6 +39,9 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
 - `ctest --test-dir build-release --output-on-failure`: 56/56 tests passed.
+- After adding the static RMI benchmark cases, a fresh full-suite run was
+  stopped while the existing concurrency stress test continued for over two
+  minutes. The four directly relevant RMI tests then passed (4/4, 0.20 sec).
 - The adaptive benchmark accepted RMI leaf sizes alongside a dataset shape and
   reported the requested size; smoke runs at 256 and 2,048 both passed exact
   checks.
@@ -75,6 +80,10 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   and shape completed 16 rebuilds each with exact checks passing. Global had
   the lowest rebuild-trigger median in this workload, and no RMI leaf size was
   a consistent winner.
+- Trial 015 compared static hit and in-range-miss lookup across four RMI leaf
+  sizes and three baselines on four shapes. Global learned lookup led on evenly
+  spaced keys; B+ tree led most other cases. RMI results depended on leaf size,
+  shape, and query type; the small clustered-hit lead is within run variation.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -84,10 +93,10 @@ general performance rankings. No sanitizer or race detector was run.
 1. The global model remains a single linear regression, with piecewise and
    two-stage RMI alternatives using fixed-size rank leaves. Trial 014 compared
    four RMI leaf sizes for adaptive rebuild cost on four shapes and found no
-   consistent winner. Static lookup, model-size trade-offs, additional skew
-   levels, hot-set sizes, and fresh-process repeats remain open. Adaptive
-   RMI leaf-size selection is configured per index and does not change
-   automatically.
+   consistent winner. Trial 015 adds initial static lookup evidence across
+   four shapes, but broader sizes, memory measurements, additional skew levels,
+   hot-set sizes, and fresh-process repeats remain open. Adaptive RMI leaf-size
+   selection is configured per index and does not change automatically.
 2. Rank residual and absolute correction-distance distributions are reported
    for seeded query samples, but actual probe counts and lookup latency by
    correction distance still need direct measurement.

@@ -82,7 +82,10 @@ search the full dataset, so a routing error cannot produce a false membership
 answer. The target leaf size is configurable. Trial 010's initial static lookup
 comparison showed no RMI performance win. Trial 014 compared adaptive rebuild
 costs at four leaf sizes across four shapes and found no consistent winner;
-static lookup latency and model memory by leaf size still need measurement.
+Trial 015 measured static hits and in-range misses at those leaf sizes against
+binary search, B+ tree, and the global model. It found that results depend on
+key shape and query type, with no universal leaf-size winner. More dataset
+sizes and model-memory measurements remain open.
 
 `learned_correction_diagnostics` compares each model's predicted rank with the
 exact lower-bound insertion rank for seeded hits and in-range misses. The
