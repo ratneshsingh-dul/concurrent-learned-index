@@ -255,6 +255,13 @@ void BM_RmiLearnedIndex_ContainsExistingByShape(benchmark::State& state) {
     }, shape_from_argument(state));
 }
 
+void BM_RmiLearnedIndex_ContainsExistingByLeafSize(benchmark::State& state) {
+    const auto leaf_size = static_cast<std::size_t>(state.range(2));
+    benchmark_contains(state, true, [leaf_size](const auto& dataset) {
+        return learned_index::RmiLearnedIndex(dataset, leaf_size);
+    }, shape_from_argument(state));
+}
+
 void BM_LearnedIndex_ContainsMissingByShape(benchmark::State& state) {
     benchmark_contains(state, false, [](const auto& dataset) {
         return learned_index::LearnedIndex(dataset);
@@ -288,6 +295,13 @@ void BM_PiecewiseLearnedIndex_ContainsInRangeMissingByShape(benchmark::State& st
 void BM_RmiLearnedIndex_ContainsInRangeMissingByShape(benchmark::State& state) {
     benchmark_contains(state, false, [](const auto& dataset) {
         return learned_index::RmiLearnedIndex(dataset);
+    }, shape_from_argument(state), true);
+}
+
+void BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize(benchmark::State& state) {
+    const auto leaf_size = static_cast<std::size_t>(state.range(2));
+    benchmark_contains(state, false, [leaf_size](const auto& dataset) {
+        return learned_index::RmiLearnedIndex(dataset, leaf_size);
     }, shape_from_argument(state), true);
 }
 
@@ -573,6 +587,23 @@ BENCHMARK(BM_PiecewiseLearnedIndex_ContainsExistingByShape)
 BENCHMARK(BM_RmiLearnedIndex_ContainsExistingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
+[[maybe_unused]] const bool rmi_leaf_benchmarks_registered = [] {
+    for (const auto shape : {0, 1, 2, 3}) {
+        for (const auto leaf_size : {256, 512, 1024, 2048}) {
+            benchmark::RegisterBenchmark(
+                "BM_RmiLearnedIndex_ContainsExistingByLeafSize",
+                &BM_RmiLearnedIndex_ContainsExistingByLeafSize
+            )->Args({100000, shape, leaf_size})
+                ->Repetitions(5)->MinWarmUpTime(0.5);
+            benchmark::RegisterBenchmark(
+                "BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize",
+                &BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize
+            )->Args({100000, shape, leaf_size})
+                ->Repetitions(5)->MinWarmUpTime(0.5);
+        }
+    }
+    return true;
+}();
 BENCHMARK(BM_LearnedIndex_ContainsMissingByShape)
     ->Args({100000, 0})->Args({100000, 1})->Args({100000, 2})->Args({100000, 3})
     ->Repetitions(5)->MinWarmUpTime(0.5);
