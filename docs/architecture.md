@@ -79,9 +79,10 @@ select one equal-rank leaf model. That leaf predicts a candidate position.
 Unlike the piecewise index, routing is learned from the root prediction rather
 than selected by searching segment key boundaries. The final correction may
 search the full dataset, so a routing error cannot produce a false membership
-answer. The target leaf size is configurable; training time, model memory, and
-the leaf-size trade-off still need broader evaluation. Trial 010 is an initial
-comparison and shows no performance win yet.
+answer. The target leaf size is configurable. Trial 010's initial static lookup
+comparison showed no RMI performance win. Trial 014 compared adaptive rebuild
+costs at four leaf sizes across four shapes and found no consistent winner;
+static lookup latency and model memory by leaf size still need measurement.
 
 `learned_correction_diagnostics` compares each model's predicted rank with the
 exact lower-bound insertion rank for seeded hits and in-range misses. The
@@ -139,8 +140,10 @@ later rebuild. Exact correction remains inside each model lookup.
 
 This first automatic policy is deliberately simple and deterministic. It uses
 data-fit error as a proxy; it does not estimate query frequency, training cost,
-or model memory. Trial 013 records its choices and rebuild costs across four
-key shapes. Trials 011–012 record the earlier manual global/RMI comparisons.
+or model memory. Trials 013–014 record its choices and rebuild costs across
+different insert batches and key shapes; the final selected model can change as
+the base changes. Trials 011–012 record the earlier manual global/RMI
+comparisons.
 
 ## B+ tree behavior
 

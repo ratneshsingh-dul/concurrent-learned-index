@@ -1,8 +1,8 @@
 # Project status
 
-Last verified: 2026-10-22. This is an educational research prototype, not a
-production database index. The implementation and experiment baseline is
-committed on `main` as `3080c5c`.
+Last verified: 2026-10-25. This is an educational research prototype, not a
+production database index. The implementation and experiment history is
+committed on `main`.
 
 ## Implemented
 
@@ -37,6 +37,9 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
 - `ctest --test-dir build-release --output-on-failure`: 56/56 tests passed.
+- The adaptive benchmark accepted RMI leaf sizes alongside a dataset shape and
+  reported the requested size; smoke runs at 256 and 2,048 both passed exact
+  checks.
 - `build-release/cpp/learned_index_app.exe` ran and demonstrated binary
   search, B+ tree, global learned, RMI, and adaptive index behavior.
 - `git diff --check` reported no whitespace errors.
@@ -67,6 +70,11 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 - Trial 013 compared forced global and automatic selection across four
   deterministic shapes. Automatic mode chose RMI only for the random-key
   shape after one rebuild in this sample; exact checks passed in every run.
+- Trial 014 compared adaptive rebuilds at RMI leaf sizes 256, 512, 1,024, and
+  2,048 against global and automatic policies. Five fresh processes per setting
+  and shape completed 16 rebuilds each with exact checks passing. Global had
+  the lowest rebuild-trigger median in this workload, and no RMI leaf size was
+  a consistent winner.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -74,11 +82,12 @@ general performance rankings. No sanitizer or race detector was run.
 ## Known scope limits and next work
 
 1. The global model remains a single linear regression, with piecewise and
-   two-stage RMI alternatives using fixed-size rank leaves. Initial evenly
-   spaced, clustered, quadratic-gap, and one hot-query cases are recorded, but
-   model-size/leaf-size trade-offs, additional skew levels, hot-set sizes, and
-   fresh-process repeats remain open. Adaptive RMI leaf-size selection is
-   configured per index and does not change automatically.
+   two-stage RMI alternatives using fixed-size rank leaves. Trial 014 compared
+   four RMI leaf sizes for adaptive rebuild cost on four shapes and found no
+   consistent winner. Static lookup, model-size trade-offs, additional skew
+   levels, hot-set sizes, and fresh-process repeats remain open. Adaptive
+   RMI leaf-size selection is configured per index and does not change
+   automatically.
 2. Rank residual and absolute correction-distance distributions are reported
    for seeded query samples, but actual probe counts and lookup latency by
    correction distance still need direct measurement.
@@ -87,7 +96,7 @@ general performance rankings. No sanitizer or race detector was run.
    it does not account for query frequencies, RMI model memory, or training
    time. Trial 003 shows synchronous rebuild cost can dominate an update batch.
 4. Concurrent correctness covers multiple readers and writers while rebuilds
-   publish snapshots. Trials 011–012 provide initial throughput and
+   publish snapshots. Trials 011–014 provide initial throughput and
    write/rebuild-latency samples, but broader mixes and race-sanitizer coverage
    remain open. The triggering writer remains synchronous and readers still
    acquire a shared lock. Broader concurrency guarantees and supported

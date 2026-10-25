@@ -130,7 +130,8 @@ Automatic mode samples up to 256 evenly spaced keys from each candidate base
 and selects RMI only when its mean absolute rank prediction error is at least
 20% lower than the global model's. This deterministic data-fit rule does not
 observe a live query distribution or account for RMI training time or memory.
-Trial 013 records its initial behavior across four key shapes.
+Trial 013 records the initial policy sample; [Trial 014](docs/experiments/trial-014-adaptive-leaf-size.md)
+compares four RMI leaf sizes and reports the adaptive rebuild-cost trade-off.
 
 ### What the first measurements say
 
@@ -161,9 +162,9 @@ advantage and its training was slower; see
 ```text
 cpp/include/learned_index/   public data types and index interfaces
 cpp/src/                     index implementations
-cpp/apps/                    walkthroughs and diagnostic tools
+cpp/apps/                    walkthroughs, diagnostics, adaptive benchmark
 cpp/tests/                   correctness and concurrency tests
-cpp/benchmarks/              Google Benchmark workload definitions
+cpp/benchmarks/              Google Benchmark workloads and data generators
 docs/STATUS.md               implemented scope and open work
 docs/architecture.md         diagrams and behavior notes
 docs/experiments/            trial write-ups and raw benchmark output
@@ -175,8 +176,9 @@ docs/experiments/            trial write-ups and raw benchmark output
   uses a fixed target segment size that has not been tuned across datasets;
   skew and hot-query behavior still need broader measurement.
 - The standalone RMI is static; the adaptive index can select and retrain an
-  RMI base with a configured leaf size. The first dynamic comparison is
-  exploratory; broader leaf-size, data-shape, and memory trade-offs remain.
+  RMI base with a configured leaf size. Trial 014 tested four leaf sizes on
+  four shapes and found no consistent rebuild-cost winner; lookup latency and
+  model-memory trade-offs remain open.
 - Adaptive rebuild thresholds are configured manually. Automatic mode trains
   both model candidates on rebuild and considers sampled rank error only; it
   does not optimize runtime workload mix, build cost, or model memory. The
@@ -185,9 +187,9 @@ docs/experiments/            trial write-ups and raw benchmark output
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
 - Concurrent correctness covers multiple readers and writers during repeated
-  rebuilds. Initial global/RMI reader-throughput and rebuild-latency samples
-  are recorded in Trials 011–012; broader workload mixes and race-detector
-  runs remain open. The standalone static RMI and B+ tree interfaces are not
+  rebuilds. Initial reader-throughput and rebuild-latency samples are recorded
+  in Trials 011–014; broader workload mixes and race-detector runs remain open.
+  The standalone static RMI and B+ tree interfaces are not
   thread-safe.
 
 The project is complete only as an evolving prototype. The broader research
