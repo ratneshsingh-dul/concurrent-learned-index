@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
             const std::string model_name(argv[4]);
             if (model_name == "rmi") {
                 model_kind = learned_index::AdaptiveLearnedIndex::ModelKind::rmi;
-                if (argc == 6) {
+                if (argc >= 6) {
                     rmi_leaf_size = static_cast<std::size_t>(
                         parse_count(argv[5], "rmi_leaf_size")
                     );
