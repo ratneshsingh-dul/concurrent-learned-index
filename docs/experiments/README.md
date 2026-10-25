@@ -22,6 +22,7 @@ auditable.
 | [011](trial-011-adaptive-concurrency.md) | 2026-10-21 | What happens to adaptive-index reader throughput and insert/rebuild latency during mixed reads and writes? | Exact results in all runs; reader throughput was lower with 4–8 readers than with one, and a scheduling outlier reinforces that this first Windows sample is exploratory. |
 | [012](trial-012-adaptive-rmi.md) | 2026-10-22 | Can the adaptive index retain an RMI base through rebuilds, and how do its first mixed-workload measurements compare with the global model? | Exact in every run. RMI had higher sampled reader throughput and longer rebuild-trigger inserts than the global model on this evenly spaced dataset; three repetitions per setting are preliminary. |
 | [013](trial-013-automatic-model-selection.md) | 2026-10-23 | Does the sampled-error policy choose the global model or RMI across four data shapes, and what is the added rebuild cost? | It selected RMI for random keys and global for the other three shapes in this sample; exact checks passed, while automatic rebuilds were slower because both candidates are trained. |
+| [014](trial-014-adaptive-leaf-size.md) | 2026-10-25 | How does RMI leaf size affect adaptive rebuild cost across four shapes, compared with global and automatic policies? | Global had the lowest rebuild-trigger latency in this workload; tested RMI leaf sizes showed no consistent winner, and automatic remained slower due to training both candidates. Five fresh processes per setting; exploratory. |
 
 ## Recording the next trial
 
