@@ -145,6 +145,63 @@ TEST(AdaptiveLearnedIndexTest, AutomaticPolicyCanChangeModelAfterRebuild) {
     EXPECT_TRUE(index.contains(20255));
 }
 
+TEST(AdaptiveLearnedIndexTest, SwitchesModelDuringConcurrentReadsAndRebuild) {
+    std::vector<Key> initial_keys;
+    initial_keys.reserve(100000);
+    for (Key i = 0; i < 100000; ++i) {
+        initial_keys.push_back(i * 2);
+    }
+    AdaptiveLearnedIndex index(
+        SortedDataset(std::move(initial_keys)), 256,
+        AdaptiveLearnedIndex::ModelKind::automatic, 128
+    );
+    ASSERT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::global);
+
+    std::atomic<bool> start{false};
+    std::atomic<bool> writer_done{false};
+    std::atomic<std::size_t> published_inserts{0};
+    std::atomic<std::size_t> reader_failures{0};
+    auto reader = [&] {
+        while (!start.load(std::memory_order_acquire)) {
+            std::this_thread::yield();
+        }
+        do {
+            if (!index.contains(0) || !index.contains(199998)) {
+                reader_failures.fetch_add(1, std::memory_order_relaxed);
+            }
+            const auto visible = published_inserts.load(std::memory_order_acquire);
+            if (visible > 0 && !index.contains(200000 + visible - 1)) {
+                reader_failures.fetch_add(1, std::memory_order_relaxed);
+            }
+        } while (!writer_done.load(std::memory_order_acquire));
+    };
+
+    std::thread first_reader(reader);
+    std::thread second_reader(reader);
+    std::thread writer([&] {
+        start.store(true, std::memory_order_release);
+        for (Key i = 0; i < 256; ++i) {
+            if (!index.insert(200000 + i)) {
+                reader_failures.fetch_add(1, std::memory_order_relaxed);
+            }
+            published_inserts.store(static_cast<std::size_t>(i + 1),
+                                    std::memory_order_release);
+        }
+        writer_done.store(true, std::memory_order_release);
+    });
+
+    writer.join();
+    first_reader.join();
+    second_reader.join();
+
+    EXPECT_EQ(reader_failures.load(), 0);
+    EXPECT_EQ(index.rebuild_count(), 1);
+    EXPECT_EQ(index.selected_model_kind(), AdaptiveLearnedIndex::ModelKind::rmi);
+    for (Key i = 0; i < 256; ++i) {
+        EXPECT_TRUE(index.contains(200000 + i));
+    }
+}
+
 TEST(AdaptiveLearnedIndexTest, SupportsConcurrentReadersAndWriter) {
     std::vector<Key> initial_keys;
     for (Key key = 0; key < 256; ++key) {
