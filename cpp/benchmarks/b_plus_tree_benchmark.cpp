@@ -305,6 +305,28 @@ void BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize(benchmark::State& state
     }, shape_from_argument(state), true);
 }
 
+void BM_RmiLearnedIndex_TrainByLeafSize(benchmark::State& state) {
+    const auto dataset = benchmark_data::make_dataset(
+        static_cast<std::size_t>(state.range(0)), shape_from_argument(state)
+    );
+    const auto leaf_size = static_cast<std::size_t>(state.range(2));
+    state.SetLabel(benchmark_data::shape_name(shape_from_argument(state)));
+    std::size_t model_storage_bytes = 0;
+
+    for (auto _ : state) {
+        const learned_index::RmiLearnedIndex index(dataset, leaf_size);
+        model_storage_bytes = index.estimated_model_storage_bytes();
+        benchmark::DoNotOptimize(index.predict_position(dataset[dataset.size() / 2]));
+        benchmark::ClobberMemory();
+    }
+
+    state.SetItemsProcessed(
+        state.iterations() * static_cast<std::int64_t>(dataset.size())
+    );
+    state.counters["model_storage_bytes"] =
+        static_cast<double>(model_storage_bytes);
+}
+
 void BM_BPlusTree_BulkLoad(benchmark::State& state) {
     const auto dataset = benchmark_data::make_dataset(
         static_cast<std::size_t>(state.range(0))
@@ -598,6 +620,11 @@ BENCHMARK(BM_RmiLearnedIndex_ContainsExistingByShape)
             benchmark::RegisterBenchmark(
                 "BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize",
                 &BM_RmiLearnedIndex_ContainsInRangeMissingByLeafSize
+            )->Args({100000, shape, leaf_size})
+                ->Repetitions(5)->MinWarmUpTime(0.5);
+            benchmark::RegisterBenchmark(
+                "BM_RmiLearnedIndex_TrainByLeafSize",
+                &BM_RmiLearnedIndex_TrainByLeafSize
             )->Args({100000, shape, leaf_size})
                 ->Repetitions(5)->MinWarmUpTime(0.5);
         }

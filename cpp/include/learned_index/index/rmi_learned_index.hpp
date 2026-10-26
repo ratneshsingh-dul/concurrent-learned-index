@@ -51,6 +51,12 @@ public:
     [[nodiscard]] std::size_t predict_position(Key key) const noexcept;
     [[nodiscard]] std::optional<std::size_t> find(Key key) const noexcept;
     [[nodiscard]] bool contains(Key key) const noexcept;
+
+    // Estimated index-owned storage: the object plus leaf-model vector capacity.
+    // It excludes the borrowed dataset and allocator bookkeeping.
+    [[nodiscard]] std::size_t estimated_model_storage_bytes() const noexcept {
+        return sizeof(RmiLearnedIndex) + leaves_.capacity() * sizeof(LinearModel);
+    }
 };
 
 static_assert(Index<RmiLearnedIndex>);

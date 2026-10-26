@@ -49,6 +49,13 @@ TEST(RmiLearnedIndexTest, FindsEveryKeyAcrossAllBenchmarkShapesAndLeafSizes) {
     }
 }
 
+TEST(RmiLearnedIndexTest, ReportsEstimatedOwnedModelStorage) {
+    const auto dataset = benchmark_data::make_dataset(1000);
+    const RmiLearnedIndex index(dataset, 256);
+
+    EXPECT_GE(index.estimated_model_storage_bytes(), sizeof(RmiLearnedIndex));
+}
+
 TEST(RmiLearnedIndexTest, RejectsInRangeMissesAndOutOfRangeKeys) {
     const auto dataset = benchmark_data::make_dataset(
         4096, benchmark_data::DatasetShape::quadratic_gaps
