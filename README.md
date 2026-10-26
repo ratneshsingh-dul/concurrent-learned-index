@@ -130,10 +130,9 @@ Automatic mode samples up to 256 evenly spaced keys from each candidate base
 and selects RMI only when its mean absolute rank prediction error is at least
 20% lower than the global model's. This deterministic data-fit rule does not
 observe a live query distribution or account for RMI training time or memory.
-Trial 013 records the initial policy sample; [Trial 014](docs/experiments/trial-014-adaptive-leaf-size.md)
-compares adaptive rebuild cost by RMI leaf size. [Trial 015](docs/experiments/trial-015-static-rmi-leaf-size.md)
-compares static hit and in-range-miss lookup latency with binary search,
-B+ tree, and the global learned model.
+Trial 013 records the initial policy sample. [Trial 014](docs/experiments/trial-014-adaptive-leaf-size.md) compares adaptive rebuild cost by RMI leaf size.
+[Trial 015](docs/experiments/trial-015-static-rmi-leaf-size.md) compares static lookup with binary search, B+ tree, and the global model.
+[Trial 016](docs/experiments/trial-016-rmi-training-memory.md) measures RMI training and estimated model storage.
 
 ### What the first measurements say
 
@@ -180,7 +179,7 @@ docs/experiments/            trial write-ups and raw benchmark output
 - The standalone RMI is static; the adaptive index can select and retrain an
   RMI base with a configured leaf size. Trial 014 tested four leaf sizes on
   four shapes and found no consistent rebuild-cost winner; lookup latency and
-  model-memory trade-offs remain open. Trial 015 found static lookup results
+  model-memory trade-offs remain shape-dependent. Trial 015 found static lookup results
   depend on key shape and query type; it did not identify one best leaf size.
 - Adaptive rebuild thresholds are configured manually. Automatic mode trains
   both model candidates on rebuild and considers sampled rank error only; it

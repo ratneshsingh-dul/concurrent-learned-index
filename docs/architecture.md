@@ -84,8 +84,12 @@ comparison showed no RMI performance win. Trial 014 compared adaptive rebuild
 costs at four leaf sizes across four shapes and found no consistent winner;
 Trial 015 measured static hits and in-range misses at those leaf sizes against
 binary search, B+ tree, and the global model. It found that results depend on
-key shape and query type, with no universal leaf-size winner. More dataset
-sizes and model-memory measurements remain open.
+key shape and query type, with no universal leaf-size winner. Trial 016 measured
+model construction/training and estimated model-owned storage across four shapes.
+Larger target leaves reduced estimated storage from 25,136 to 3,248 bytes at
+100K keys, while training medians had no consistent winner. The estimate excludes
+dataset storage and allocator overhead; more dataset sizes and total-memory
+measurements remain open.
 
 `learned_correction_diagnostics` compares each model's predicted rank with the
 exact lower-bound insertion rank for seeded hits and in-range misses. The

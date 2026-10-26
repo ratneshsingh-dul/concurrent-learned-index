@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-25. This is an educational research prototype, not a
+Last verified: 2026-10-26. This is an educational research prototype, not a
 production database index. The implementation and experiment history is
 committed on `main`.
 
@@ -27,6 +27,10 @@ committed on `main`.
 - Standalone mixed reader/writer benchmark for the adaptive index, reporting
   aggregate reader throughput, ordinary insert latency, and rebuild-trigger
   insert latency; first repeated sample is Trial 011.
+- RMI reports estimated index-owned model storage (object plus leaf-model vector
+  capacity); the estimate excludes the borrowed dataset and allocator bookkeeping.
+  Trial 016 measures this estimate and model construction/training across four
+  shapes and four leaf targets.
 - Static lookup benchmarks for RMI leaf sizes 256, 512, 1,024, and 2,048,
   using existing-key hits and in-range misses across four deterministic shapes.
 - CMake targets for app, library, tests, benchmarks, learned-model rank-error
@@ -80,6 +84,10 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   and shape completed 16 rebuilds each with exact checks passing. Global had
   the lowest rebuild-trigger median in this workload, and no RMI leaf size was
   a consistent winner.
+- Trial 016 compared model construction/training and estimated model-owned
+  storage at four leaf targets on four 100K-key shapes. The estimate ranged
+  from 25,136 bytes at leaf 256 to 3,248 bytes at leaf 2,048; training medians
+  had no consistent winner.
 - Trial 015 compared static hit and in-range-miss lookup across four RMI leaf
   sizes and three baselines on four shapes. Global learned lookup led on evenly
   spaced keys; B+ tree led most other cases. RMI results depended on leaf size,
