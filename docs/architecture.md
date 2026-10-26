@@ -133,8 +133,9 @@ starts another build.
 This shortens the exclusive-lock window, but it does not make rebuilding
 asynchronous from the triggering writer: that insert waits for merge/training
 and publication. Lookup still takes a shared lock, and this is neither
-lock-free nor a measured latency guarantee. Concurrent performance and
-race-detector checks remain future work.
+lock-free nor a measured latency guarantee. Tests cover readers during an
+automatic global-to-RMI switch and concurrent writer rebuilds. Race-detector
+checks and broader workload measurements remain future work.
 
 `AdaptiveLearnedIndex` supports three policies: `ModelKind::global` (the
 default), `ModelKind::rmi`, and `ModelKind::automatic`. Manual policies persist

@@ -42,10 +42,12 @@ committed on `main`.
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- `ctest --test-dir build-release --output-on-failure`: 56/56 tests passed.
-- After adding the static RMI benchmark cases, a fresh full-suite run was
-  stopped while the existing concurrency stress test continued for over two
-  minutes. The four directly relevant RMI tests then passed (4/4, 0.20 sec).
+- Latest full run on 2026-10-26: `ctest --test-dir build-release --output-on-failure`
+  passed 58/58 tests. The new automatic-model/concurrent-reader rebuild test
+  also passed 20 consecutive repetitions.
+- Historical note: an earlier full-suite attempt after adding static RMI
+  benchmark cases was stopped during a long concurrency stress test. The latest
+  complete run above passes the full suite.
 - The adaptive benchmark accepted RMI leaf sizes alongside a dataset shape and
   reported the requested size; smoke runs at 256 and 2,048 both passed exact
   checks.

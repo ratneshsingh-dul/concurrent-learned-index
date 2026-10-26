@@ -189,10 +189,10 @@ docs/experiments/            trial write-ups and raw benchmark output
 - Updates support insertion only. Deletion, persistence, crash recovery,
   concurrent B+ tree access, and lock-free reads are not implemented.
 - Concurrent correctness covers multiple readers and writers during repeated
-  rebuilds. Initial reader-throughput and rebuild-latency samples are recorded
-  in Trials 011–014; broader workload mixes and race-detector runs remain open.
-  The standalone static RMI and B+ tree interfaces are not
-  thread-safe.
+  rebuilds, including an automatic global-to-RMI switch. Initial reader-throughput
+  and rebuild-latency samples are recorded in Trials 011–014; broader workload
+  mixes and race-detector runs remain open. The standalone static RMI and B+ tree
+  interfaces are not thread-safe.
 
 The project is complete only as an evolving prototype. The broader research
 work is still in progress; consult the [status and next steps](docs/STATUS.md)
