@@ -1,6 +1,6 @@
 # Project status
 
-Last verified: 2026-10-26. This is an educational research prototype, not a
+Last verified: 2026-10-27. This is an educational research prototype, not a
 production database index. The implementation and experiment history is
 committed on `main`.
 
@@ -42,12 +42,13 @@ committed on `main`.
 On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
 
 - `cmake --build build-release` completed successfully.
-- Latest full run on 2026-10-26: `ctest --test-dir build-release --output-on-failure`
-  passed 58/58 tests. The new automatic-model/concurrent-reader rebuild test
-  also passed 20 consecutive repetitions.
-- Historical note: an earlier full-suite attempt after adding static RMI
-  benchmark cases was stopped during a long concurrency stress test. The latest
-  complete run above passes the full suite.
+- Latest Release build and full CTest run on 2026-10-27 passed; 58/58 tests
+  succeeded. The automatic-model/concurrent-reader rebuild test passed 20
+  consecutive repetitions.
+- The walkthrough ran successfully and showed a global-to-RMI switch after an
+  automatic rebuild. Both diagnostics ran on 10K keys per shape. The adaptive
+  reader/writer smoke run (`auto`, random keys, 2 readers, 10K initial keys,
+  512 inserts) selected RMI after two rebuilds and reported `exact=true`.
 - The adaptive benchmark accepted RMI leaf sizes alongside a dataset shape and
   reported the requested size; smoke runs at 256 and 2,048 both passed exact
   checks.
@@ -86,14 +87,14 @@ On Windows 10.0.26200 with GCC 16.2.0 and Google Benchmark 1.9.1:
   and shape completed 16 rebuilds each with exact checks passing. Global had
   the lowest rebuild-trigger median in this workload, and no RMI leaf size was
   a consistent winner.
-- Trial 016 compared model construction/training and estimated model-owned
-  storage at four leaf targets on four 100K-key shapes. The estimate ranged
-  from 25,136 bytes at leaf 256 to 3,248 bytes at leaf 2,048; training medians
-  had no consistent winner.
 - Trial 015 compared static hit and in-range-miss lookup across four RMI leaf
   sizes and three baselines on four shapes. Global learned lookup led on evenly
   spaced keys; B+ tree led most other cases. RMI results depended on leaf size,
   shape, and query type; the small clustered-hit lead is within run variation.
+- Trial 016 compared model construction/training and estimated model-owned
+  storage at four leaf targets on four 100K-key shapes. The estimate ranged
+  from 25,136 bytes at leaf 256 to 3,248 bytes at leaf 2,048; training medians
+  had no consistent winner.
 
 These checks do not prove correctness for all inputs and do not establish
 general performance rankings. No sanitizer or race detector was run.
@@ -119,9 +120,11 @@ general performance rankings. No sanitizer or race detector was run.
    write/rebuild-latency samples, but broader mixes and race-sanitizer coverage
    remain open. The triggering writer remains synchronous and readers still
    acquire a shared lock. Broader concurrency guarantees and supported
-   structures remain to be established. The adaptive model kind and RMI leaf
-   size are fixed per index instance; online model switching and
-   workload-driven leaf-size adaptation are not implemented.
+   structures remain to be established. The configured policy is fixed per
+   index instance. Automatic mode can change the selected global/RMI model at
+   each rebuild using sampled rank error, but it does not use live query
+   frequencies. RMI leaf size remains fixed; workload-driven leaf-size
+   adaptation is not implemented.
 5. Updates support insertion only. Deletion, tombstones, persistence, crash
    recovery, B+ tree concurrency, and lock-free access are outside the current
    prototype.

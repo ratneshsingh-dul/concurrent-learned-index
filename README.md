@@ -53,7 +53,9 @@ flowchart LR
 
 The prediction is a hint, never a correctness boundary. The
 [architecture notes](docs/architecture.md) explain the lookup and update paths,
-threading behavior, and current trade-offs.
+threading behavior, and current trade-offs. The [project guide](docs/PROJECT_GUIDE.md)
+gives a shorter end-to-end explanation of the structures, adaptive rebuilds,
+benchmark evidence, and how to run the demo.
 
 ## Build and run
 
