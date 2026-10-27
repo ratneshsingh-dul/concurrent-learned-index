@@ -1,4 +1,6 @@
 #include <iostream>
+#include <utility>
+#include <vector>
 
 #include <learned_index/data/sorted_dataset.hpp>
 #include <learned_index/index/adaptive_learned_index.hpp>
@@ -45,5 +47,32 @@ int main() {
     std::cout << "  contains 54 after RMI retraining: "
               << adaptive_rmi.contains(54) << '\n';
     std::cout << "  rebuild count: " << adaptive_rmi.rebuild_count() << '\n';
+
+    std::vector<learned_index::Key> evenly_spaced_keys;
+    evenly_spaced_keys.reserve(10000);
+    for (learned_index::Key i = 0; i < 10000; ++i) {
+        evenly_spaced_keys.push_back(i * 2);
+    }
+    learned_index::AdaptiveLearnedIndex adaptive_auto(
+        learned_index::SortedDataset(std::move(evenly_spaced_keys)), 256,
+        learned_index::AdaptiveLearnedIndex::ModelKind::automatic, 128
+    );
+    const auto model_name = [](learned_index::AdaptiveLearnedIndex::ModelKind kind) {
+        return kind == learned_index::AdaptiveLearnedIndex::ModelKind::rmi
+            ? "RMI" : "global";
+    };
+    std::cout << "\nAdaptive automatic model selection\n";
+    std::cout << "  selected before inserts: "
+              << model_name(adaptive_auto.selected_model_kind()) << '\n';
+    for (learned_index::Key i = 0; i < 256; ++i) {
+        if (!adaptive_auto.insert(20000 + i)) {
+            return 1;
+        }
+    }
+    std::cout << "  selected after rebuild: "
+              << model_name(adaptive_auto.selected_model_kind()) << '\n';
+    std::cout << "  inserted keys remain searchable: "
+              << std::boolalpha << adaptive_auto.contains(20255) << '\n';
+    std::cout << "  rebuild count: " << adaptive_auto.rebuild_count() << '\n';
     return 0;
 }
